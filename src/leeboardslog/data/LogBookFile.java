@@ -106,17 +106,51 @@ public class LogBookFile {
     }
     
     
+    public static enum FileExceptionReason {
+        FILE_NOT_FOUND,
+        INVALID_FORMAT,
+        FILE_IO_ERROR,
+    }
+    
     /**
      * The exception thrown by this class on file errors.
      */
     public static class FileException extends java.lang.Exception {
-
-        private FileException(String message) {
-            super(message);
-        }
+        private final String fileName;
+        private final FileExceptionReason reason;
         
+        public final FileExceptionReason getReason() {
+            return reason;
+        }
+
+        public final String getFileName() { 
+            return fileName; 
+        }
+
+        private FileException(FileExceptionReason reason, String fileName, String message) {
+            super(message);
+            this.reason = reason;
+            this.fileName = fileName;
+        }
     }
     
+    protected static void throwFileNotFoundException(String fileName) throws FileException {
+        throw new FileException(FileExceptionReason.FILE_NOT_FOUND, fileName, "");
+    }
+    
+    protected static void throwFileFormatException(String rsrcId, String fileName) throws FileException {
+        String message = ResourceSource.getString(rsrcId, fileName);
+        throw new FileException(FileExceptionReason.INVALID_FORMAT, fileName, message);
+    }
+    protected static void throwFileFormatException(String rsrcId, String fileName, RuntimeException ex) throws FileException {
+        String message = ResourceSource.getString(rsrcId, fileName, ex.getLocalizedMessage());
+        throw new FileException(FileExceptionReason.INVALID_FORMAT, fileName, message);
+    }
+    
+    protected static void throwFileIOException(String rsrcId, String fileName, IOException ex) throws FileException {
+        String message = ResourceSource.getString("Error.logBookFileHeaderReadFailed", fileName, ex.getLocalizedMessage());
+        throw new FileException(FileExceptionReason.FILE_IO_ERROR, fileName, message);
+    }
     
     public static class Header {
         public String version;
@@ -129,8 +163,7 @@ public class LogBookFile {
         try {
             String fileTag = reader.readLine();
             if (!FILE_TAG.equals(fileTag)) {
-                String message = ResourceSource.getString("Error.logBookFileHeaderTagInvalid", fileName);
-                throw new FileException(message);
+                throwFileFormatException("Error.logBookFileHeaderTagInvalid", fileName);
             }
             
             Header header = new Header();
@@ -145,11 +178,15 @@ public class LogBookFile {
             header.lastUpdateInstant = Instant.parse(lastUpdateInstantText);
 
             return header;
-        } catch (IOException | NumberFormatException | DateTimeParseException ex) {
+        } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);
-            String message = ResourceSource.getString("Error.logBookFileHeaderReadFailed", fileName, ex.getLocalizedMessage());
-            throw new FileException(message);
+            throwFileIOException("Error.logBookFileHeaderReadFailed", fileName, ex);
+        } catch (NumberFormatException | DateTimeParseException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+            throwFileFormatException("Error.logBookFileHeaderReadFailed", fileName, ex);
         }
+        
+        return null;
     }
     
     public static void writeHeader(Header header, String fileName, BufferedWriter writer) throws FileException {
@@ -170,8 +207,7 @@ public class LogBookFile {
             writer.newLine();
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);
-            String message = ResourceSource.getString("Error.logBookFileHeaderWriteFailed", fileName, ex.getLocalizedMessage());
-            throw new FileException(message);
+            throwFileIOException("Error.logBookFileHeaderWriteFailed", fileName, ex);
         }
     }
     
@@ -192,9 +228,10 @@ public class LogBookFile {
             return new LogBookFile(file, header);
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);
-            String message = ResourceSource.getString("Error.createLogBookFileFailed", fileName, ex.getLocalizedMessage());
-            throw new FileException(message);
+            throwFileIOException("Error.createLogBookFileFailed", fileName, ex);
         }
+        
+        return null;
     }
     
     /**
@@ -214,7 +251,7 @@ public class LogBookFile {
             if (!isVersionSupported(header.version)) {
                 LOG.log(Level.SEVERE, null, "Unsupported version: " + header.version);
                 String message = ResourceSource.getString("Error.openLogBookUnsupportedVersion", fileName, header.version, ResourceSource.getAppName());
-                throw new FileException(message);
+                throw new FileException(FileExceptionReason.INVALID_FORMAT, fileName, message);
             }
             
             JSONObject rootJSONObject = new JSONObject(new JSONTokener(reader));
@@ -223,7 +260,7 @@ public class LogBookFile {
             if (logBookJSONObject == null) {
                 LOG.log(Level.SEVERE, null, "Missing " + CURRENT_LOGBOOK_KEY);
                 String message = ResourceSource.getString("Error.openLogBookMissingKey", fileName, CURRENT_LOGBOOK_KEY);
-                throw new FileException(message);
+                throw new FileException(FileExceptionReason.INVALID_FORMAT, fileName, message);
             }
             
             LogBookFile logBookFile = new LogBookFile(file, header);
@@ -232,12 +269,10 @@ public class LogBookFile {
             
         } catch (FileNotFoundException ex) {
             LOG.log(Level.SEVERE, null, ex);
-            String message = ResourceSource.getString("Error.openLogBookFileNotFound", fileName, ex.getLocalizedMessage());
-            throw new FileException(message);
+            throwFileNotFoundException(fileName);
         } catch (JSONException ex) {
             LOG.log(Level.SEVERE, null, ex);
-            String message = ResourceSource.getString("Error.openLogBookJSONInvalid", fileName, ex.getLocalizedMessage());
-            throw new FileException(message);
+            throwFileFormatException("Error.openLogBookJSONInvalid", fileName, ex);
         } finally {
             try {
                 if (inputStream != null) {
@@ -247,12 +282,22 @@ public class LogBookFile {
                 LOG.log(Level.SEVERE, null, ex);
             }
         }
+        
+        return null;
     }
     
     
     protected LogBookFile(File file, Header header) {
         this.file = file;
         this.header = header;
+    }
+    
+    
+    /**
+     * @return The underlying file.
+     */
+    public final File getFile() {
+        return this.file;
     }
     
     
@@ -361,10 +406,8 @@ public class LogBookFile {
             this.isLogBookChanged = false;
             
         } catch (IOException ex) {
-            
             LOG.log(Level.SEVERE, null, ex);
-            String message = ResourceSource.getString("Error.logBookUpdateFileFailed", fileName, ex.getLocalizedMessage());
-            throw new FileException(message);
+            throwFileIOException("Error.logBookUpdateFileFailed", fileName, ex);
             
         } finally {
             try {
@@ -376,8 +419,7 @@ public class LogBookFile {
                 }
             } catch (IOException ex) {
                 LOG.log(Level.SEVERE, null, ex);
-                String message = ResourceSource.getString("Error.logBookUpdateFileFailed", fileName, ex.getLocalizedMessage());
-                throw new FileException(message);
+                throwFileIOException("Error.logBookUpdateFileFailed", fileName, ex);
             }
         }
     }

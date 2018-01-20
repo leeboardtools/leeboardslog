@@ -15,11 +15,14 @@
  */
 package leeboardslog;
 
+import java.util.prefs.Preferences;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import leeboardslog.ui.LogBookEditor;
 import leeboardslog.ui.MonthlyController;
 
 /**
@@ -27,9 +30,23 @@ import leeboardslog.ui.MonthlyController;
  * @author Albert Santos
  */
 public class LeeboardsLog extends Application {
+    public static final String PREF_LOG_FILE_NAME = "LogFileName";
+    
+    private static LeeboardsLog me;
+    private LogBookEditor logBookEditor;
     
     @Override
     public void start(Stage stage) throws Exception {
+        me = this;
+        
+        Preferences preferences = Preferences.userNodeForPackage(LeeboardsLog.class);
+        logBookEditor = new LogBookEditor(preferences);
+        
+        if (!logBookEditor.restoreLastLogBook(stage)) {
+            Platform.exit();
+            return;
+        }
+        
         /*
         TTF Font loading:
     String fName = "/fonts/A.ttf";
