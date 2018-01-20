@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.web.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="leeboardslog.ui.MonthlyController">
+   <top>
+      <BorderPane BorderPane.alignment="CENTER">
+         <left>
+            <HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+                <Spinner fx:id="month" styleClass="arrows-on-right-horizontal" BorderPane.alignment="CENTER"/>
+                <Spinner fx:id="year"  styleClass="arrows-on-right-horizontal" BorderPane.alignment="CENTER"/>
+            </HBox>
+         </left>
+         <right>
+            <HBox alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
+               <children>
+                  <MenuButton mnemonicParsing="false" text="Settings">
+                    <items>
+                      <MenuItem mnemonicParsing="false" text="Action 1" />
+                      <MenuItem mnemonicParsing="false" text="Action 2" />
+                    </items>
+                  </MenuButton>
+               </children>
+            </HBox>
+         </right>
+         <center>
+            <HBox alignment="CENTER" BorderPane.alignment="CENTER_RIGHT">
+               <children>
+                  <TextField fx:id="searchText" promptText="Search..." HBox.hgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" text="Search" />
+               </children>
+            </HBox>
+         </center>
+         <bottom>
+            <Separator prefWidth="200.0" BorderPane.alignment="CENTER" />
+         </bottom>
+      </BorderPane>
+   </top>
+   <bottom>
+      <VBox fx:id="editPane" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+         <children>
+            <HBox alignment="CENTER_LEFT">
+               <children>
+                  <Label text="Title:" />
+                  <TextField alignment="CENTER" prefHeight="25.0" prefWidth="222.0" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+            <Separator prefWidth="200.0" />
+            <HTMLEditor htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" prefHeight="200.0" prefWidth="506.0" />
+            <ListView fx:id="testList" prefHeight="200.0" prefWidth="200.0" />
+         </children>
+      </VBox>
+   </bottom>
+</BorderPane>
