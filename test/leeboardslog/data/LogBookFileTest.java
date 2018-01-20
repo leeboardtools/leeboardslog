@@ -157,9 +157,11 @@ public class LogBookFileTest {
         ZoneId zoneId = ZoneId.of("Europe/Paris");
         
         File file = createTempFile();
-        LogBookFile refLogBookFile = LogBookFile.createLogBookFile(file);
+        LogBookFile refLogBookFile = LogBookFile.createLogBookFile(file, "Anonymous");
         LogBook logBook = refLogBookFile.getLogBook();
 
+        assertEquals("Anonymous", logBook.getActiveAuthor());
+        
         refLogBookFile.setOptIsCompressFile(Optional.of(false));
         
         LogEntry entryA = new LogEntry(null, TimePeriod.fromEdgeTimes(
@@ -178,7 +180,7 @@ public class LogBookFileTest {
         assertFalse(refLogBookFile.isLogBookChanged());
 
         {        
-            LogBookFile testLogBookFile = LogBookFile.openLogBookFile(file);
+            LogBookFile testLogBookFile = LogBookFile.openLogBookFile(file, "Anonymous");
             assertEquals(logBook, testLogBookFile.getLogBook());
         }
         
@@ -189,7 +191,7 @@ public class LogBookFileTest {
         assertFalse(refLogBookFile.isLogBookChanged());
 
         {        
-            LogBookFile testLogBookFile = LogBookFile.openLogBookFile(file);
+            LogBookFile testLogBookFile = LogBookFile.openLogBookFile(file, "Anonymous");
             assertEquals(logBook, testLogBookFile.getLogBook());
         }
     }

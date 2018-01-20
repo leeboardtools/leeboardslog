@@ -33,6 +33,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import leeboardslog.LeeboardsLog;
 
 
 /**
@@ -53,6 +54,7 @@ public class MonthlyController implements Initializable {
     private BorderPane mainPane;
     
     private MonthlyViewControl monthlyViewControl;
+    private LogBookEditor logBookEditor;
     
     private final ObjectProperty<LocalDate> activeDate = new SimpleObjectProperty<>(this, "activeDate", LocalDate.now());
     
@@ -108,9 +110,16 @@ public class MonthlyController implements Initializable {
             this.monthlyViewControl.setActiveDate(newValue);
         });
         
+        
+        this.logBookEditor = LeeboardsLog.getLogBookEditor();
+        if (this.logBookEditor != null) {
+            
+        }
+        
         // TEST!!!
         ObservableList<String> testStrings = FXCollections.observableArrayList("A", "B", "C");
         testList.setItems(testStrings);
-    }    
-
+    }
+    
+    
 }

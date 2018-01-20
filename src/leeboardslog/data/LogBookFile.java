@@ -85,7 +85,7 @@ public class LogBookFile {
         try {
             InputStream inputStream = fileToInputStream(file);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            Header header = readHeader(file.getName(), reader);
+            Header header = readHeader(file.getAbsolutePath(), reader);
             if (!isVersionSupported(header.version)) {
                 return false;
             }
@@ -159,6 +159,13 @@ public class LogBookFile {
         public Instant lastUpdateInstant;
     }
     
+    /**
+     * Helper for reading in the file header.
+     * @param fileName  The file name.
+     * @param reader    The reader being read from.
+     * @return  The header.
+     * @throws leeboardslog.data.LogBookFile.FileException 
+     */
     public static Header readHeader(String fileName, BufferedReader reader) throws FileException {
         try {
             String fileTag = reader.readLine();
@@ -189,6 +196,13 @@ public class LogBookFile {
         return null;
     }
     
+    /**
+     * Helper for writing out the file header.
+     * @param header    The header to write.
+     * @param fileName  The name of the file being written to.
+     * @param writer    The writer to write to.
+     * @throws leeboardslog.data.LogBookFile.FileException 
+     */
     public static void writeHeader(Header header, String fileName, BufferedWriter writer) throws FileException {
         try {
             writer.write(FILE_TAG);
@@ -214,18 +228,24 @@ public class LogBookFile {
     /**
      * Creates a new log book file. If the file already exists, it is cleared.
      * @param file  The file object identifying the file.
+     * @param activeAuthor  The active author for the file, may be <code>null</code>.
      * @return  The log book.
      * @throws leeboardslog.data.LogBookFile.FileException 
      */
-    public static LogBookFile createLogBookFile(File file) throws FileException {
-        String fileName = file.getName();
+    public static LogBookFile createLogBookFile(File file, String activeAuthor) throws FileException {
+        String fileName = file.getAbsolutePath();
         try {
             // Make sure we can write to the file...
             file.createNewFile();
             Header header = new Header();
             header.version = VERSION_VALUE;
             
-            return new LogBookFile(file, header);
+            LogBookFile logBookFile = new LogBookFile(file, header);
+            if ((activeAuthor != null) && !activeAuthor.isEmpty()) {
+                logBookFile.getLogBook().setActiveAuthor(activeAuthor);
+            }
+            logBookFile.updateFile();
+            return logBookFile;
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);
             throwFileIOException("Error.createLogBookFileFailed", fileName, ex);
@@ -237,11 +257,12 @@ public class LogBookFile {
     /**
      * Opens an existing log book file.
      * @param file  The file object identifying the file.
+     * @param activeAuthor  The active author for the file, may be <code>null</code>.
      * @return  The log book file.
      * @throws leeboardslog.data.LogBookFile.FileException 
      */
-    public static LogBookFile openLogBookFile(File file) throws FileException {
-        String fileName = file.getName();
+    public static LogBookFile openLogBookFile(File file, String activeAuthor) throws FileException {
+        String fileName = file.getAbsolutePath();
         InputStream inputStream = null;
         try {
             inputStream = fileToInputStream(file);
@@ -265,6 +286,9 @@ public class LogBookFile {
             
             LogBookFile logBookFile = new LogBookFile(file, header);
             logBookFile.logBook = LogBook.fromJSON(logBookJSONObject);
+            if ((activeAuthor != null) && !activeAuthor.isEmpty()) {
+                logBookFile.logBook.setActiveAuthor(activeAuthor);
+            }
             return logBookFile;
             
         } catch (FileNotFoundException ex) {

@@ -16,18 +16,13 @@
 package leeboardslog.ui;
 
 import com.leeboardtools.dialog.PromptDialog;
-import com.leeboardtools.util.FxUtil;
 import com.leeboardtools.util.ResourceSource;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import leeboardslog.data.LogBookFile;
@@ -44,29 +39,48 @@ import leeboardslog.data.LogBookFile;
 public class LogBookEditor {
     private static final Logger LOG = Logger.getLogger(LogBookEditor.class.getName());
     
-    public static final String PREFS_LAST_FILE_NAME = "LastFileName";
+    public static final String PREFS_PREVIOUS_FILE_NAME = "PreviousFileName";
+    public static final String PREFS_ACTIVE_AUTHOR_NAME = "ActiveAuthorName";
     
     public static final int BTN_NEW_LOG_FILE = 1;
     public static final int BTN_OPEN_LOG_FILE = 2;
     public static final int BTN_EXIT = 3;
+    
+    String defaultDocSubDir = "LeeboardTools";
+    String activeAuthor;
     
     final Preferences preferences;
     LogBookFile logBookFile;
     
     public LogBookEditor(Preferences preferences) {
         this.preferences = preferences;
+        
+        this.activeAuthor = preferences.get(PREFS_ACTIVE_AUTHOR_NAME, "");
+        if (this.activeAuthor.isEmpty()) {
+            this.activeAuthor = System.getProperty("user.name");
+        }
     }
     
-    protected void generatePromptMessagesForFileException(ArrayList<String> promptMsgs, LogBookFile.FileException ex) {
+    /**
+     * @return The log book file currently being edited.
+     */
+    public final LogBookFile getLogBookFile() {
+        return this.logBookFile;
+    }
+    
+    protected void generatePromptMessagesForFileException(String prefixId, ArrayList<String> promptMsgs, LogBookFile.FileException ex) {
+        promptMsgs.add(ResourceSource.getString(prefixId));
+        promptMsgs.add(ex.getFileName());
+        
         switch (ex.getReason()) {
             case FILE_NOT_FOUND :
-                promptMsgs.add(ResourceSource.getString("Prompt.lastEditedLogBookNotFound", ex.getFileName(), ex.getLocalizedMessage()));
+                promptMsgs.add(ResourceSource.getString("Prompt.wasNotFound"));
                 break;
 
             case FILE_IO_ERROR :
             case INVALID_FORMAT :
             default :
-                promptMsgs.add(ResourceSource.getString("Prompt.lastEditedLogBookFailed", ex.getFileName(), ex.getLocalizedMessage()));
+                promptMsgs.add(ResourceSource.getString("Prompt.couldNotBeOpened", ex.getLocalizedMessage()));
                 break;
 
         }
@@ -90,16 +104,16 @@ public class LogBookEditor {
             promptMsgs.add("");
             promptMsgs.add(ResourceSource.getString("Prompt.noLastEditedLogBook_1"));
         } catch (LogBookFile.FileException ex) {
-            generatePromptMessagesForFileException(promptMsgs, ex);
+            generatePromptMessagesForFileException("Prompt.prefixLastEditedLogBook", promptMsgs, ex);
         }
         
         while (true) {
             PromptDialog promptDialog = new PromptDialog();
             promptDialog.setTitle(ResourceSource.getString("Title.application"));
             
-            for (String msg : promptMsgs) {
+            promptMsgs.forEach((msg) -> {
                 promptDialog.addMessage(msg);
-            }
+            });
             promptDialog.addMessage("");
             promptDialog.addMessage(ResourceSource.getString("Prompt.choicesAre"));
 
@@ -127,7 +141,7 @@ public class LogBookEditor {
             }
             catch (LogBookFile.FileException ex) {
                 promptMsgs.clear();
-                generatePromptMessagesForFileException(promptMsgs, ex);
+                generatePromptMessagesForFileException("Prompt.prefixSelectedLogBook", promptMsgs, ex);
             }
         }
     }
@@ -139,11 +153,65 @@ public class LogBookEditor {
      * @throws leeboardslog.data.LogBookFile.FileException 
      */
     protected boolean openLastLogBook(Window ownerWindow) throws LogBookFile.FileException {
-        String lastFileName = this.preferences.get(PREFS_LAST_FILE_NAME, "");
-        if (lastFileName.isEmpty()) {
+        String previousFileName = this.preferences.get(PREFS_PREVIOUS_FILE_NAME, "");
+        if (previousFileName.isEmpty()) {
             return false;
         }
-        return false;
+
+        openLogBook(new File(previousFileName));
+        return true;
+    }
+    
+    
+    protected FileChooser createFileChooser(File initialFile) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(ResourceSource.getString("ExtensionFilter.logBookFiles"), "*.LBLog"),
+                new FileChooser.ExtensionFilter(ResourceSource.getString("ExtensionFilter.allFiles"), "*.*")
+        );
+        
+        boolean isFileSet = false;
+        if (initialFile != null) {
+            if (initialFile.exists()) {
+                isFileSet = true;
+                fileChooser.setInitialDirectory(initialFile);
+            }
+            else {
+                File dir = initialFile.getParentFile();
+                if (dir != null) {
+                    if (dir.exists()) {
+                        isFileSet = true;
+                        fileChooser.setInitialDirectory(dir);
+                    }
+                }
+            }
+        }
+        
+        if (!isFileSet) {
+            String userDir = System.getProperty("user.home", "");
+            if (!userDir.isEmpty()) {
+                try {
+                    File userDirFile = new File(userDir);
+                    if (userDirFile.exists()) {
+                        File docDirFile = new File(userDirFile, this.defaultDocSubDir);
+                        if (!docDirFile.exists()) {
+                            if (docDirFile.mkdir()) {
+                                userDirFile = docDirFile;
+                            }
+                        }
+                        else {
+                            userDirFile = docDirFile;
+                        }
+                        fileChooser.setInitialDirectory(userDirFile);
+                    }
+                }
+                catch (SecurityException ex) {
+                    // Just ignore this...
+                }
+            }
+        }
+        
+        return fileChooser;
     }
     
     
@@ -155,17 +223,24 @@ public class LogBookEditor {
      */
     public boolean promptNewLogBook(Window ownerWindow) throws LogBookFile.FileException {
         // We need a name for the log book file.
-        FileChooser fileChooser = new FileChooser();
+        FileChooser fileChooser = createFileChooser(null);
+        
         fileChooser.setTitle(ResourceSource.getString("Title.chooseNewLogBookFileName"));
+        fileChooser.setInitialFileName(ResourceSource.getString("Misc.newLogFileName"));
         
         File newFile = fileChooser.showSaveDialog(ownerWindow);
         if (newFile == null) {
             return false;
         }
         
-        LogBookFile newLogBookFile = LogBookFile.createLogBookFile(newFile);
+        LogBookFile newLogBookFile = LogBookFile.createLogBookFile(newFile, this.activeAuthor);
         this.logBookFile = newLogBookFile;
-        this.preferences.put(PREFS_LAST_FILE_NAME, newFile.getAbsolutePath());
+        this.preferences.put(PREFS_PREVIOUS_FILE_NAME, newFile.getAbsolutePath());
+        try {
+            this.preferences.flush();
+        } catch (BackingStoreException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+        }
         
         return true;
     }
@@ -178,7 +253,8 @@ public class LogBookEditor {
      * @throws leeboardslog.data.LogBookFile.FileException 
      */
     public boolean promptOpenLogBook(Window ownerWindow) throws LogBookFile.FileException {
-        FileChooser fileChooser = new FileChooser();
+        File initialFile = (this.logBookFile != null) ? this.logBookFile.getFile() : null;
+        FileChooser fileChooser = createFileChooser(initialFile);
         fileChooser.setTitle(ResourceSource.getString("Title.chooseOpenLogBookFileName"));
         
         File openFile = fileChooser.showOpenDialog(ownerWindow);
@@ -193,10 +269,18 @@ public class LogBookEditor {
             }
         }
         
-        LogBookFile newLogBookFile = LogBookFile.openLogBookFile(openFile);
-        this.logBookFile = newLogBookFile;
-        this.preferences.put(PREFS_LAST_FILE_NAME, openFile.getAbsolutePath());
-        
+        openLogBook(openFile);
         return true;
+    }
+    
+    protected void openLogBook(File openFile) throws LogBookFile.FileException {
+        LogBookFile newLogBookFile = LogBookFile.openLogBookFile(openFile, this.activeAuthor);
+        this.logBookFile = newLogBookFile;
+        this.preferences.put(PREFS_PREVIOUS_FILE_NAME, openFile.getAbsolutePath());
+        try {
+            this.preferences.flush();
+        } catch (BackingStoreException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+        }
     }
 }

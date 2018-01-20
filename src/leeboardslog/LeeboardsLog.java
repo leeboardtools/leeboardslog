@@ -35,6 +35,13 @@ public class LeeboardsLog extends Application {
     private static LeeboardsLog me;
     private LogBookEditor logBookEditor;
     
+    /**
+     * @return The active log book editor.
+     */
+    public static LogBookEditor getLogBookEditor() {
+        return me.logBookEditor;
+    }
+    
     @Override
     public void start(Stage stage) throws Exception {
         me = this;
@@ -47,18 +54,12 @@ public class LeeboardsLog extends Application {
             return;
         }
         
-        /*
-        TTF Font loading:
-    String fName = "/fonts/A.ttf";
-    InputStream is = Main.class.getResourceAsStream(fName);
-    Font font = Font.createFont(Font.TRUETYPE_FONT, is);
-        */
-        
         Parent root = FXMLLoader.load(MonthlyController.class.getResource("Monthly.fxml"));
         
         Scene scene = new Scene(root);
         
         stage.setScene(scene);
+        stage.setTitle(logBookEditor.getLogBookFile().getFile().getName());
         stage.show();
     }
 
