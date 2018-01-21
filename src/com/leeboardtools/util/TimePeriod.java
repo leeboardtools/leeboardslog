@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.zone.ZoneRulesException;
 import java.util.ArrayList;
@@ -109,10 +108,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * Compares this time period to another time period. The ordering is first by the
      * start instants, and if those are the same then by the end instants.
      * @param o The time period to compare to.
-     * @return < 0 if the start instant of this time period is before the start instant
+     * @return &lt; 0 if the start instant of this time period is before the start instant
      * of the other time period, or if the start instants are the same but the end instant
      * is before the end instant of the other time period, 0 if the start instants are
-     * equal and the end instants are equal, > 0 otherwise.
+     * equal and the end instants are equal, &gt; 0 otherwise.
      */
     @Override
     public int compareTo(TimePeriod o) {

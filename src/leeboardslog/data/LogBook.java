@@ -44,7 +44,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 //
-// TODO: Put together an ObservableLogBookMap implements ObservableMap<LocalDate, List<String>>
+// TODO: Need a listener for the currentZoneId property, if it changes then we
+// need to rebuild the entriesByDate map. Should only need to rebuild if the
+// ZoneRules of the two ZoneIds are different.
 // 
 
 /**
@@ -65,9 +67,9 @@ public class LogBook {
     private final Map<String, EntryMaster> masterLogEntries = new HashMap<>();
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByStart = new TreeMap<>(new LogEntry.TimePeriodStartComparator());
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByEnd = new TreeMap<>(new LogEntry.TimePeriodEndComparator());
-    private final ObservableMap<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> entriesByDate = FXCollections.observableHashMap();
-    private final ReadOnlyMapWrapper<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> readOnlyEntriesByDate 
-            = new ReadOnlyMapWrapper<>(FXCollections.unmodifiableObservableMap(entriesByDate));
+    private final ObservableMap<LocalDate, DayLogEntries> entriesByDate = FXCollections.observableHashMap();
+    private final ReadOnlyMapWrapper<LocalDate, DayLogEntries> readOnlyEntriesByDate 
+            = new ReadOnlyMapWrapper<>(this, "entriesByDate", FXCollections.unmodifiableObservableMap(entriesByDate));
     
     private final List<Listener> listeners = new ArrayList<>();
 
@@ -101,6 +103,7 @@ public class LogBook {
         this.currentZoneId.addListener((observable) -> {
             markChanged();
         });
+        
     }
     
     
@@ -415,10 +418,10 @@ public class LogBook {
         }
         
         final Collection<LogEntry> destEntries = logEntries;
-        SortedMap<LogEntry.TimePeriodKey, LogEntry> entriesMap = this.entriesByDate.get(date);
-        if (entriesMap != null) {
-            entriesMap.forEach((key, value) -> { 
-                destEntries.add(value);
+        DayLogEntries dayLogEntries = this.entriesByDate.get(date);
+        if (dayLogEntries != null) {
+            dayLogEntries.logEntries.forEach((logEntry) -> { 
+                destEntries.add(logEntry);
             });
         }
         return logEntries;
@@ -428,7 +431,7 @@ public class LogBook {
     /**
      * @return The value of the entriesByDate property.
      */
-    public final ObservableMap<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> getEntriesByDate() {
+    public final ObservableMap<LocalDate, DayLogEntries> getEntriesByDate() {
         return readOnlyEntriesByDate.getReadOnlyProperty().get();
     }
     
@@ -438,7 +441,7 @@ public class LogBook {
      * Note that the sets must not be modified.
      * @return The entriesByDate property.
      */
-    public final ReadOnlyMapProperty<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> entriesByDateProperty() {
+    public final ReadOnlyMapProperty<LocalDate, DayLogEntries> entriesByDateProperty() {
         return readOnlyEntriesByDate.getReadOnlyProperty();
     }
     
@@ -481,6 +484,10 @@ public class LogBook {
             entryMaster.timePeriodKey = new LogEntry.TimePeriodKey(logEntry);
             addEntryMaster(entryMaster);
         }
+        
+        this.listeners.forEach((listener)-> {
+            listener.entryModified(this, logEntry);
+        });
     }
     
     private void addEntryMaster(EntryMaster entryMaster) {
@@ -488,12 +495,12 @@ public class LogBook {
         this.entriesByEnd.put(entryMaster.timePeriodKey, entryMaster);
         
         entryMaster.localDates.forEach((date) -> {
-            SortedMap<LogEntry.TimePeriodKey, LogEntry> mapEntry = this.entriesByDate.get(date);
-            if (mapEntry == null) {
-                mapEntry = new TreeMap<>();
-                this.entriesByDate.put(date, mapEntry);
+            DayLogEntries dayLogEntries = this.entriesByDate.get(date);
+            if (dayLogEntries == null) {
+                dayLogEntries = new DayLogEntries(date);
+                this.entriesByDate.put(date, dayLogEntries);
             }
-            mapEntry.put(entryMaster.timePeriodKey, entryMaster.logEntry);
+            dayLogEntries.logEntries.add(entryMaster.logEntry);
         });
     }
     
@@ -502,10 +509,10 @@ public class LogBook {
         this.entriesByEnd.remove(entryMaster.timePeriodKey);
         
         entryMaster.localDates.forEach((date)-> {
-            SortedMap<LogEntry.TimePeriodKey, LogEntry> mapEntry = this.entriesByDate.get(date);
-            if (mapEntry != null) {
-                mapEntry.remove(entryMaster.timePeriodKey);
-                if (mapEntry.isEmpty()) {
+            DayLogEntries dayLogEntries = this.entriesByDate.get(date);
+            if (dayLogEntries != null) {
+                dayLogEntries.logEntries.remove(entryMaster.logEntry);
+                if (dayLogEntries.logEntries.isEmpty()) {
                     this.entriesByDate.remove(date);
                 }
             }
@@ -642,6 +649,14 @@ public class LogBook {
          * @param logEntries    The collection of log entry objects that were removed.
          */
         public void entriesRemoved(LogBook logBook, Collection<LogEntry> logEntries);
+        
+        /**
+         * Called whenever a {@link LogEntry} object in the book is modified.
+         * @param logBook   The log book calling this.
+         * @param entry The entry that was modified.
+         */
+        default public void entryModified(LogBook logBook, LogEntry entry) {
+        }
     }
     
     

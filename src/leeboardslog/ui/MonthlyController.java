@@ -17,23 +17,24 @@ package leeboardslog.ui;
 
 import com.leeboardtools.control.LocalDateSpinnerValueFactory;
 import com.leeboardtools.control.MonthlyViewControl;
+import com.leeboardtools.util.StringListConverter;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
+import java.util.SortedMap;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.ListView;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import leeboardslog.LeeboardsLog;
+import leeboardslog.data.DayLogEntries;
+import leeboardslog.data.LogEntry;
 
 
 /**
@@ -53,7 +54,7 @@ public class MonthlyController implements Initializable {
     @FXML
     private BorderPane mainPane;
     
-    private MonthlyViewControl monthlyViewControl;
+    private MonthlyViewControl<DayLogEntries> monthlyViewControl;
     private LogBookEditor logBookEditor;
     
     private final ObjectProperty<LocalDate> activeDate = new SimpleObjectProperty<>(this, "activeDate", LocalDate.now());
@@ -69,8 +70,19 @@ public class MonthlyController implements Initializable {
     }
     
     
-    @FXML
-    private ListView<String> testList;
+    public static class DayLogEntriesConverter implements StringListConverter<DayLogEntries> {
+        @Override
+        public ObservableList<String> toStringList(DayLogEntries object) {
+            ObservableList<String> strings = FXCollections.observableArrayList();
+            if (object != null) {
+                object.getLogEntries().forEach((logEntry)-> {
+                    String text = logEntry.getHeadingText();
+                    strings.add(text);
+                });
+            }
+            return strings;
+        }
+    }
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -93,19 +105,14 @@ public class MonthlyController implements Initializable {
             yearValueFactory.setValue(newValue);
         });
         
-        this.monthlyViewControl = new MonthlyViewControl();
+        this.monthlyViewControl = new MonthlyViewControl<>();
         this.mainPane.setCenter(this.monthlyViewControl);
+        
+        this.monthlyViewControl.setStringListConverter(new DayLogEntriesConverter());
 
-        // Can't seem to get a lambda expression to work so using an anonymous class...
-        this.monthlyViewControl.activeDateProperty().addListener(new ChangeListener<LocalDate>() {
-            @Override
-            public void changed(ObservableValue<? extends LocalDate> observable, LocalDate oldValue, LocalDate newValue) {
-                activeDate.set(newValue);
-            }
+        this.monthlyViewControl.activeDateProperty().addListener((observable, oldValue, newValue)-> {
+            this.activeDate.set(newValue);
         });
-        //this.monthlyViewControl.activeDateProperty().addListener((observable, oldValue, newValue)-> {
-        //    this.activeDate.set(newValue);
-        //});
         this.activeDate.addListener((observable, oldValue, newValue)-> {
             this.monthlyViewControl.setActiveDate(newValue);
         });
@@ -113,12 +120,13 @@ public class MonthlyController implements Initializable {
         
         this.logBookEditor = LeeboardsLog.getLogBookEditor();
         if (this.logBookEditor != null) {
-            
+            this.logBookEditor.logBookFileProperty().addListener(((observable, oldValue, newValue) -> {
+                this.monthlyViewControl.setItems(newValue.getLogBook().getEntriesByDate());
+            }));
+            if (this.logBookEditor.getLogBookFile() != null) {
+                this.monthlyViewControl.setItems(this.logBookEditor.getLogBookFile().getLogBook().getEntriesByDate());
+            }
         }
-        
-        // TEST!!!
-        ObservableList<String> testStrings = FXCollections.observableArrayList("A", "B", "C");
-        testList.setItems(testStrings);
     }
     
     

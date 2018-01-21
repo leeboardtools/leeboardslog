@@ -23,6 +23,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import leeboardslog.data.LogBookFile;
@@ -46,11 +48,13 @@ public class LogBookEditor {
     public static final int BTN_OPEN_LOG_FILE = 2;
     public static final int BTN_EXIT = 3;
     
+    public static final String FILE_EXTENSION = "leeboardslog";
+    
     String defaultDocSubDir = "LeeboardTools";
     String activeAuthor;
     
     final Preferences preferences;
-    LogBookFile logBookFile;
+    private final ReadOnlyObjectWrapper<LogBookFile> logBookFile = new ReadOnlyObjectWrapper<>(this, "logBookFile");
     
     public LogBookEditor(Preferences preferences) {
         this.preferences = preferences;
@@ -62,10 +66,18 @@ public class LogBookEditor {
     }
     
     /**
-     * @return The log book file currently being edited.
+     * @return The value of the log book file property.
      */
     public final LogBookFile getLogBookFile() {
-        return this.logBookFile;
+        return this.logBookFile.get();
+    }
+    
+    /**
+     * Defines the log book that's currently being edited.
+     * @return The logBookFile property.
+     */
+    public final ReadOnlyObjectProperty<LogBookFile> logBookFileProperty() {
+        return this.logBookFile.getReadOnlyProperty();
     }
     
     protected void generatePromptMessagesForFileException(String prefixId, ArrayList<String> promptMsgs, LogBookFile.FileException ex) {
@@ -166,7 +178,7 @@ public class LogBookEditor {
     protected FileChooser createFileChooser(File initialFile) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter(ResourceSource.getString("ExtensionFilter.logBookFiles"), "*.LBLog"),
+                new FileChooser.ExtensionFilter(ResourceSource.getString("ExtensionFilter.logBookFiles"), "*." + FILE_EXTENSION),
                 new FileChooser.ExtensionFilter(ResourceSource.getString("ExtensionFilter.allFiles"), "*.*")
         );
         
@@ -234,7 +246,7 @@ public class LogBookEditor {
         }
         
         LogBookFile newLogBookFile = LogBookFile.createLogBookFile(newFile, this.activeAuthor);
-        this.logBookFile = newLogBookFile;
+        this.logBookFile.set(newLogBookFile);
         this.preferences.put(PREFS_PREVIOUS_FILE_NAME, newFile.getAbsolutePath());
         try {
             this.preferences.flush();
@@ -253,7 +265,8 @@ public class LogBookEditor {
      * @throws leeboardslog.data.LogBookFile.FileException 
      */
     public boolean promptOpenLogBook(Window ownerWindow) throws LogBookFile.FileException {
-        File initialFile = (this.logBookFile != null) ? this.logBookFile.getFile() : null;
+        LogBookFile currentLogBookFile = this.logBookFile.get();
+        File initialFile = (currentLogBookFile != null) ? currentLogBookFile.getFile() : null;
         FileChooser fileChooser = createFileChooser(initialFile);
         fileChooser.setTitle(ResourceSource.getString("Title.chooseOpenLogBookFileName"));
         
@@ -262,9 +275,9 @@ public class LogBookEditor {
             return false;
         }
         
-        if (this.logBookFile != null) {
+        if (currentLogBookFile != null) {
             // It's the current file...
-            if (openFile.equals(this.logBookFile.getFile())) {
+            if (openFile.equals(currentLogBookFile.getFile())) {
                 return true;
             }
         }
@@ -275,7 +288,7 @@ public class LogBookEditor {
     
     protected void openLogBook(File openFile) throws LogBookFile.FileException {
         LogBookFile newLogBookFile = LogBookFile.openLogBookFile(openFile, this.activeAuthor);
-        this.logBookFile = newLogBookFile;
+        this.logBookFile.set(newLogBookFile);
         this.preferences.put(PREFS_PREVIOUS_FILE_NAME, openFile.getAbsolutePath());
         try {
             this.preferences.flush();
@@ -283,4 +296,6 @@ public class LogBookEditor {
             LOG.log(Level.SEVERE, null, ex);
         }
     }
+    
+    
 }

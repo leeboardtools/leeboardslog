@@ -15,7 +15,6 @@
  */
 package leeboardslog.data;
 
-import com.leeboardtools.util.ResourceSource;
 import com.leeboardtools.util.TimePeriod;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -27,7 +26,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -258,17 +256,18 @@ public class LogBookTest {
     }
     
     void assertLogEntriesByDate(TreeMap<LocalDate, Collection<LogEntry>> refDateEntries, LogBook logBook) {
-        ObservableMap<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> entriesByDate = logBook.getEntriesByDate();
+        ObservableMap<LocalDate, DayLogEntries> entriesByDate = logBook.getEntriesByDate();
         assertEquals(refDateEntries.size(), entriesByDate.size());
         
         refDateEntries.forEach((key, refEntries) -> {
-            SortedMap<LogEntry.TimePeriodKey, LogEntry> testEntries = entriesByDate.get(key);
+            DayLogEntries testEntries = entriesByDate.get(key);
             assertNotEquals(null, testEntries);
             
-            assertEquals(refEntries.size(), testEntries.size());
+            List<LogEntry> testLogEntries = testEntries.getLogEntries();
+            assertEquals(refEntries.size(), testLogEntries.size());
             
             refEntries.forEach((logEntry) -> {
-                assertTrue(testEntries.containsValue(logEntry));
+                assertTrue(testLogEntries.contains(logEntry));
             });
         });
     }

@@ -492,6 +492,19 @@ public class LogEntry {
     }
     
     
+    /**
+     * Retrieves a string of text that can be used to represent the log entry in a heading.
+     * @return The text.
+     */
+    public final String getHeadingText() {
+        String text = getTitle();
+        if ((text == null) || text.isEmpty()) {
+            // TODO Get the first line of ContentHTMLBodyText()...
+            text = this.timePeriod.toString();
+        }
+        return text;
+    }
+    
     
     /**
      * Comparator that orders on the guid.

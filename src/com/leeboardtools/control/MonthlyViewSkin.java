@@ -29,12 +29,17 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
-import javafx.scene.layout.VBox;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Callback;
 
 /**
- *
+ * Default skin for {@link MonthlyViewControl}.
+ * <p>
+ * The skin maintains a 6 rows by 7 columns grid of {@link DayCell}s. The day cells are 
+ * optionally created via the {@link MonthlyViewControl#dayCellFactoryProperty() } callback.
+ * <p>
+ * The day cells are in turn responsible for their contents/skin.
+ * 
  * @author Albert Santos
  */
 public class MonthlyViewSkin<T> extends SkinBase<MonthlyViewControl> {
@@ -108,8 +113,8 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyViewControl> {
     }
     
     final DayCell<T> createDayCell(int dayCellRow, int dayCellCol) {
-        MonthlyViewControl control = getSkinnable();
-        Callback<MonthlyViewControl, DayCell> factory = control.getDayCellFactory();
+        MonthlyViewControl<T> control = getSkinnable();
+        Callback<MonthlyViewControl, DayCell<T>> factory = control.getDayCellFactory();
         if (factory != null) {
             return factory.call(control);
         }

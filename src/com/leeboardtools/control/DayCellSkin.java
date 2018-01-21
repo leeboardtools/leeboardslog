@@ -22,7 +22,11 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
 /**
- *
+ * Default skin created by {@link DayCell}.
+ * <p>
+ * This skin sets up a container node that contains a {@link Label} for the day of month value,
+ * a {@link Pane} for a header that's associated with the day of month label,
+ * and a {@link Pane} for a body.
  * @author Albert Santos
  * @param <T>   The type of the item contained within the day cell..
  */
@@ -38,16 +42,16 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
         
         HBox hBoxHeader = new HBox();
         Label dayLabel = new Label();
-        dayLabel.setId(MonthlyViewControl.DAY_OF_MONTH_NODE_ID);
+        dayLabel.setId(MultiDayView.DAY_OF_MONTH_NODE_ID);
         dayLabel.getStyleClass().add("day-of-month");
         
         Pane headerPane = new Pane();
-        headerPane.setId(MonthlyViewControl.DATE_HEADER_NODE_ID);
+        headerPane.setId(MultiDayView.DATE_HEADER_NODE_ID);
         hBoxHeader.getChildren().addAll(dayLabel, headerPane);
         vBox.getChildren().add(hBoxHeader);
         
         Pane bodyPane = new Pane();
-        bodyPane.setId(MonthlyViewControl.DATE_BODY_NODE_ID);
+        bodyPane.setId(MultiDayView.DATE_BODY_NODE_ID);
         vBox.getChildren().add(bodyPane);
         
         getChildren().add(vBox);

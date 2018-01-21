@@ -23,22 +23,21 @@ import javafx.scene.control.Cell;
 import javafx.scene.control.Label;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.Pane;
-import javafx.util.Callback;
 
 /**
- *
+ * Cell used to represent the contents of a day within a {@link MultiDayView} derived control.
  * @author Albert Santos
  * @param <T>   The type of the item contained within the day cell..
  */
 public class DayCell <T> extends Cell<LocalDate> {
     private static final String DEFAULT_STYLE_CLASS = "day-cell";
-    protected final MonthlyViewControl<T> control;
+    protected final MultiDayView<T> control;
     private boolean isSetup = false;
     private Label dayOfMonthLabel;
     private Pane headerPane;
     private Pane bodyPane;
 
-    public DayCell(final MonthlyViewControl<T> control) {
+    public DayCell(final MultiDayView<T> control) {
         this.control = control;
         getStyleClass().add(DEFAULT_STYLE_CLASS);
     }
@@ -70,15 +69,15 @@ public class DayCell <T> extends Cell<LocalDate> {
     }
 
     protected void loadNodes() {
-        Node node = FxUtil.getChildWithId(this, MonthlyViewControl.DAY_OF_MONTH_NODE_ID);
+        Node node = FxUtil.getChildWithId(this, MultiDayView.DAY_OF_MONTH_NODE_ID);
         if (node instanceof Label) {
             this.dayOfMonthLabel = (Label) node;
         }
-        node = FxUtil.getChildWithId(this, MonthlyViewControl.DATE_HEADER_NODE_ID);
+        node = FxUtil.getChildWithId(this, MultiDayView.DATE_HEADER_NODE_ID);
         if (node instanceof Pane) {
             this.headerPane = (Pane) node;
         }
-        node = FxUtil.getChildWithId(this, MonthlyViewControl.DATE_BODY_NODE_ID);
+        node = FxUtil.getChildWithId(this, MultiDayView.DATE_BODY_NODE_ID);
         if (node instanceof Pane) {
             this.bodyPane = (Pane) node;
         }

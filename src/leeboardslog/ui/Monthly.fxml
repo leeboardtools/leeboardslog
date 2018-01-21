@@ -14,8 +14,10 @@
       <BorderPane BorderPane.alignment="CENTER">
          <left>
             <HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
-                <Spinner fx:id="month" styleClass="arrows-on-right-horizontal" BorderPane.alignment="CENTER"/>
-                <Spinner fx:id="year"  styleClass="arrows-on-right-horizontal" BorderPane.alignment="CENTER"/>
+               <children>
+                   <Spinner fx:id="month" styleClass="arrows-on-right-horizontal" BorderPane.alignment="CENTER" />
+                   <Spinner fx:id="year" styleClass="arrows-on-right-horizontal" BorderPane.alignment="CENTER" />
+               </children>
             </HBox>
          </left>
          <right>
@@ -54,7 +56,6 @@
             </HBox>
             <Separator prefWidth="200.0" />
             <HTMLEditor htmlText="&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body contenteditable=&quot;true&quot;&gt;&lt;/body&gt;&lt;/html&gt;" prefHeight="200.0" prefWidth="506.0" />
-            <ListView fx:id="testList" prefHeight="200.0" prefWidth="200.0" />
          </children>
       </VBox>
    </bottom>
