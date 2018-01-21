@@ -59,22 +59,83 @@ public class LogBook {
     public static final String CURRENT_ZONE_ID_PROP = "currentZoneId";
     public static final String LOG_ENTRIES_KEY = "logEntries";
     
-    private final StringProperty name = new SimpleStringProperty(this, NAME_PROP);
-    private final StringProperty activeAuthor = new SimpleStringProperty(this, ACTIVE_AUTHOR_PROP, "");
-    
-    private final ObjectProperty<ZoneId> currentZoneId = new SimpleObjectProperty<>(this, CURRENT_ZONE_ID_PROP);
     
     private final Map<String, EntryMaster> masterLogEntries = new HashMap<>();
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByStart = new TreeMap<>(new LogEntry.TimePeriodStartComparator());
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByEnd = new TreeMap<>(new LogEntry.TimePeriodEndComparator());
-    private final ObservableMap<LocalDate, DayLogEntries> entriesByDate = FXCollections.observableHashMap();
-    private final ReadOnlyMapWrapper<LocalDate, DayLogEntries> readOnlyEntriesByDate 
-            = new ReadOnlyMapWrapper<>(this, "entriesByDate", FXCollections.unmodifiableObservableMap(entriesByDate));
     
     private final List<Listener> listeners = new ArrayList<>();
 
     private final ChangeId changeId = new ChangeId();
     
+    
+    /**
+     * Defines the name of the log book.
+     */
+    private final StringProperty name = new SimpleStringProperty(this, NAME_PROP);
+
+    public final StringProperty nameProperty() {
+        return name;
+    }
+    public final String getName() {
+        return name.get();
+    }
+    public final void setName(String value) {
+        name.set(value);
+    }
+    
+    
+    
+    
+    /**
+     * Defines the author that's actively editing the log book.
+     */
+    private final StringProperty activeAuthor = new SimpleStringProperty(this, ACTIVE_AUTHOR_PROP, "");
+
+    public final StringProperty activeAuthorProperty() {
+        return activeAuthor;
+    }
+    public final String getActiveAuthor() {
+        return activeAuthor.get();
+    }
+    public final void setActiveAuthor(String value) {
+        activeAuthor.set(value);
+    }
+    
+
+    /**
+     * Defines the zone id used to convert between entry time instances and local date/times.
+     */
+    private final ObjectProperty<ZoneId> currentZoneId = new SimpleObjectProperty<>(this, CURRENT_ZONE_ID_PROP);
+
+    public ObjectProperty currentZoneIdProperty() {
+        return currentZoneId;
+    }
+    public ZoneId getCurrentZoneId() {
+        return currentZoneId.get();
+    }
+    public void setCurrentZoneId(ZoneId value) {
+        currentZoneId.set(value);
+    }
+    
+    
+    /**
+     * Defines a read-only map whose keys are the local dates of all log entries and whose values
+     * are {@link DayLogEntries} containing the log entries that are partly or entirely in the key date.
+     */
+    private final ObservableMap<LocalDate, DayLogEntries> entriesByDate = FXCollections.observableHashMap();
+    private final ReadOnlyMapWrapper<LocalDate, DayLogEntries> readOnlyEntriesByDate 
+            = new ReadOnlyMapWrapper<>(this, "entriesByDate", FXCollections.unmodifiableObservableMap(entriesByDate));
+
+    public final ReadOnlyMapProperty<LocalDate, DayLogEntries> entriesByDateProperty() {
+        return readOnlyEntriesByDate.getReadOnlyProperty();
+    }
+    
+    public final ObservableMap<LocalDate, DayLogEntries> getEntriesByDate() {
+        return readOnlyEntriesByDate.getReadOnlyProperty().get();
+    }
+    
+
     /**
      * Default constructor.
      */
@@ -244,78 +305,6 @@ public class LogBook {
     
     
     /**
-     * @return The value of the name property.
-     */
-    public final String getName() {
-        return name.get();
-    }
-    
-    /**
-     * Sets the value of the name property.
-     * @param value The value to set.
-     */
-    public final void setName(String value) {
-        name.set(value);
-    }
-    
-    /**
-     * Defines the name of the log book.
-     * @return The name property.
-     */
-    public final StringProperty nameProperty() {
-        return name;
-    }
-    
-    
-    /**
-     * @return The value of the activeAuthor property.
-     */
-    public final String getActiveAuthor() {
-        return activeAuthor.get();
-    }
-    
-    /**
-     * Sets the value of the activeAuthor property.
-     * @param value The value to set.
-     */
-    public final void setActiveAuthor(String value) {
-        activeAuthor.set(value);
-    }
-    
-    /**
-     * Defines the author that's actively editing the log book.
-     * @return The activeAuthor property.
-     */
-    public final StringProperty activeAuthorProperty() {
-        return activeAuthor;
-    }
-    
-
-    /**
-     * @return The value of the currentZone property.
-     */
-    public ZoneId getCurrentZoneId() {
-        return currentZoneId.get();
-    }
-
-    /**
-     * Sets the value of the currentZone property.
-     * @param value The value to set.
-     */
-    public void setCurrentZoneId(ZoneId value) {
-        currentZoneId.set(value);
-    }
-
-    /**
-     * Defines the zone id used to convert between entry time instances and local date/times.
-     * @return The zone id property.
-     */
-    public ObjectProperty currentZoneIdProperty() {
-        return currentZoneId;
-    }
-    
-    
-    /**
      * @return The number of {@link LogEntry} objects in the book.
      */
     public final int getLogEntryCount() {
@@ -425,24 +414,6 @@ public class LogBook {
             });
         }
         return logEntries;
-    }
-    
-    
-    /**
-     * @return The value of the entriesByDate property.
-     */
-    public final ObservableMap<LocalDate, DayLogEntries> getEntriesByDate() {
-        return readOnlyEntriesByDate.getReadOnlyProperty().get();
-    }
-    
-    /**
-     * Defines a read-only map whose keys are the local dates of all log entries and whose values
-     * are sets containing the log entries that are partly or entirely in the key date.
-     * Note that the sets must not be modified.
-     * @return The entriesByDate property.
-     */
-    public final ReadOnlyMapProperty<LocalDate, DayLogEntries> entriesByDateProperty() {
-        return readOnlyEntriesByDate.getReadOnlyProperty();
     }
     
     

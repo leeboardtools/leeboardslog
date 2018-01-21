@@ -18,7 +18,7 @@ package com.leeboardtools.util;
 import javafx.collections.ObservableList;
 
 /**
- * A converter that defines conversion behavior between an object and a {@link List} of strings.
+ * A converter that defines conversion behavior between an object and a {@link ObservableList} of strings.
  * @author Albert Santos
  * @param <T>   The type of the object converted to/from a list of strings.
  */

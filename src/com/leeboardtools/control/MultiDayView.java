@@ -52,48 +52,39 @@ public abstract class MultiDayView <T> extends Control {
     //
     //--------------------------------------------------------------------------
     // items Property
-    private final MapProperty<LocalDate, T> items = new SimpleMapProperty<>(this, "items");
     
     /**
-     * @return The value of the items property.
+     * The underlying data model for the {@link MonthlyViewControl}.
      */
+    private final MapProperty<LocalDate, T> items = new SimpleMapProperty<>(this, "items");
+
+    public final MapProperty<LocalDate, T> itemsProperty() {
+        return items;
+    }
     public final ObservableMap<LocalDate, T> getItems() {
         return items.get();
     }
-    
-    /**
-     * Sets the value of the items property.
-     * @param value The value to set.
-     */
     public final void setItems(ObservableMap<LocalDate, T> value) {
         items.set(value);
-    }
-    
-    /**
-     * The underlying data model for the MonthlyViewControl.
-     * @return The items property.
-     */
-    public final MapProperty<LocalDate, T> itemsProperty() {
-        return items;
     }
     
     
     //
     //--------------------------------------------------------------------------
     // dayCellFactory Property
-    private ObjectProperty<Callback<MonthlyViewControl, DayCell<T>>> dayCellFactory;
     
     /**
-     * @return The value of the dayCellFactory property.
+     * Defines an optional factory callback for creating the cells representing the
+     * days of the month.
      */
+    private ObjectProperty<Callback<MonthlyViewControl, DayCell<T>>> dayCellFactory;
+
+    public final ObjectProperty<Callback<MonthlyViewControl, DayCell<T>>> dayCellFactoryProperty() {
+        return dayCellFactory;
+    }
     public final Callback<MonthlyViewControl, DayCell<T>> getDayCellFactory() {
         return (dayCellFactory == null) ? null : dayCellFactory.get();
     }
-    
-    /**
-     * Sets the value of the dayCellFactory property.
-     * @param factory The value to set.
-     */
     public final void setDayCellFactory(Callback<MonthlyViewControl, DayCell<T>> factory) {
         if (this.dayCellFactory == null) {
             this.dayCellFactory = new SimpleObjectProperty<>(this, "dayCellFactory");
@@ -101,32 +92,22 @@ public abstract class MultiDayView <T> extends Control {
         this.dayCellFactory.set(factory);
     }
     
-    /**
-     * Defines an optional factory callback for creating the cells representing the
-     * days of the month.
-     * @return The dayCellFactory property.
-     */
-    public final ObjectProperty<Callback<MonthlyViewControl, DayCell<T>>> dayCellFactoryProperty() {
-        return dayCellFactory;
-    }
-    
     
     //
     //--------------------------------------------------------------------------
     // cellFactory Property
-    private ObjectProperty<Callback<MonthlyViewControl, Cell<T>>> cellFactory;
-    
     /**
-     * @return The value of the cellFactory property.
+     * Defines an optional factory callback for creating the cells representing the
+     * contents of each day of the month. This cell is within the body of a DayCell.
      */
+    private ObjectProperty<Callback<MonthlyViewControl, Cell<T>>> cellFactory;
+
+    public final ObjectProperty<Callback<MonthlyViewControl, Cell<T>>> cellFactoryProperty() {
+        return cellFactory;
+    }
     public final Callback<MonthlyViewControl, Cell<T>> getCellFactory() {
         return (cellFactory == null) ? null : cellFactory.get();
     }
-    
-    /**
-     * Sets the value of the cellFactory property.
-     * @param factory The value to set.
-     */
     public final void setCellFactory(Callback<MonthlyViewControl, Cell<T>> factory) {
         if (this.cellFactory == null) {
             this.cellFactory = new SimpleObjectProperty<>(this, "cellFactory");
@@ -134,32 +115,22 @@ public abstract class MultiDayView <T> extends Control {
         this.cellFactory.set(factory);
     }
     
-    /**
-     * Defines an optional factory callback for creating the cells representing the
-     * contents of each day of the month. This cell is within the body of a DayCell.
-     * @return The cellFactory property.
-     */
-    public final ObjectProperty<Callback<MonthlyViewControl, Cell<T>>> cellFactoryProperty() {
-        return cellFactory;
-    }
 
 
     //
     //--------------------------------------------------------------------------
     // stringListConverter Property
+    /**
+     * Defines an optional converter for converting the objects of type T into a list of strings.
+     */
     private ObjectProperty<StringListConverter<T>> stringListConverter;
     
-    /**
-     * @return The value of the stringListConverter property.
-     */
+    public final ObjectProperty<StringListConverter<T>> stringListConverterProperty() {
+        return stringListConverter;
+    }
     public final StringListConverter<T> getStringListConverter() {
         return (this.stringListConverter == null) ? null : this.stringListConverter.get();
     }
-    
-    /**
-     * Sets the value of the stringListConverter property.
-     * @param converter The value to set.
-     */
     public final void setStringListConverter(StringListConverter<T> converter) {
         if (this.stringListConverter == null) {
             this.stringListConverter = new SimpleObjectProperty<>(this, "stringListConverter");
@@ -167,86 +138,60 @@ public abstract class MultiDayView <T> extends Control {
         this.stringListConverter.set(converter);
     }
     
-    /**
-     * Defines an optional converter for converting the objects of type T into a list of strings.
-     * @return The property.
-     */
-    public final ObjectProperty<StringListConverter<T>> stringListConverterProperty() {
-        return stringListConverter;
-    }
-    
     
     //
     //--------------------------------------------------------------------------
     // firstVisibleDate Read-only Property
+    /**
+     * Defines the first visible date that is visible in the view.
+     */
     final ReadOnlyObjectWrapper<LocalDate> firstVisibleDate = new ReadOnlyObjectWrapper<>(this, "firstVisibleDate");
     
-    /**
-     * @return The value of the firstVisibleDate property.
-     */
+    public final ReadOnlyObjectProperty firstVisibleDateProperty() {
+        return firstVisibleDate.getReadOnlyProperty();
+    }
     public final LocalDate getFirstVisibleDate() {
         // LocalDate is immutable, we don't have to call getReadOnlyProperty()...
         return firstVisibleDate.get();
     }
     
-    /**
-     * Defines the first visible date that is visible in the view.
-     * @return The property.
-     */
-    public final ReadOnlyObjectProperty firstVisibleDateProperty() {
-        return firstVisibleDate.getReadOnlyProperty();
-    }
     
 
     //
     //--------------------------------------------------------------------------
     // lastVisibleDate Read-only Property
+    /**
+     * Defines the last visible date that is visible in the view.
+     */
     final ReadOnlyObjectWrapper<LocalDate> lastVisibleDate = new ReadOnlyObjectWrapper<>(this, "lastVisibleDate");
     
-    /**
-     * @return The value of the lastVisibleDate property.
-     */
+    public final ReadOnlyObjectProperty lastVisibleDateProperty() {
+        return lastVisibleDate.getReadOnlyProperty();
+    }
     public final LocalDate getLastVisibleDate() {
         // LocalDate is immutable, we don't have to call getReadOnlyProperty()...
         return lastVisibleDate.get();
     }
     
-    /**
-     * Defines the last visible date that is visible in the view.
-     * @return The property.
-     */
-    public final ReadOnlyObjectProperty lastVisibleDateProperty() {
-        return lastVisibleDate.getReadOnlyProperty();
-    }
     
     
     //
     //--------------------------------------------------------------------------
     // activeDate Property
-    final ObjectProperty<LocalDate> activeDate = new SimpleObjectProperty<>(this, "activeDate");
-    
-    /**
-     * @return The value of the activeDate property.
-     */
-    public final LocalDate getActiveDate() {
-        return activeDate.get();
-    }
-    
-    /**
-     * Sets the value of the activeDate property.
-     * @param date The date to set.
-     */
-    public final void setActiveDate(LocalDate date) {
-        activeDate.set(date);
-    }
-    
     /**
      * Defines the active date within the view. The active date is normally highlighted,
      * receives the focus, and is always displayed.
-     * @return The property.
      */
+    final ObjectProperty<LocalDate> activeDate = new SimpleObjectProperty<>(this, "activeDate");
+    
     public final ObjectProperty<LocalDate> activeDateProperty() {
         return activeDate;
+    }
+    public final LocalDate getActiveDate() {
+        return activeDate.get();
+    }
+    public final void setActiveDate(LocalDate date) {
+        activeDate.set(date);
     }
     
     

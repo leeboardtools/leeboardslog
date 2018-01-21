@@ -19,7 +19,7 @@ import javafx.scene.control.Cell;
 import javafx.scene.control.Skin;
 
 /**
- * This is a cell that has a {@link ListView} inside the cell.
+ * This is a cell that has a {@link javafx.scene.control.ListView} inside the cell.
  * @author Albert Santos
  * @param <T>   The type of the elements contained within the cell's ListView.
  */

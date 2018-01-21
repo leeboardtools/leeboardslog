@@ -69,13 +69,6 @@ public class LogEntry {
     public static final String CONTENT_HTML_BODY_TEXT_PROP = "contentHTMLBodyText";
     
     private final String guid;
-    private final ObjectProperty<TimePeriod> timePeriod = new SimpleObjectProperty<>(this, TIME_PERIOD_PROP, TimePeriod.now());
-    private final ObjectProperty<ZoneId> zoneId = new SimpleObjectProperty<>(this, ZONE_ID_PROP, ZoneId.systemDefault());
-    private final StringProperty title = new SimpleStringProperty(this, TITLE_PROP);
-    private final StringProperty latestAuthor = new SimpleStringProperty(this, LATEST_AUTHOR_PROP);
-    private final Set<String> tagsSet = new HashSet<>();
-    private final SetProperty<String> tags = new SimpleSetProperty<>(this, TAGS_PROP, FXCollections.observableSet(tagsSet));
-    private final StringProperty contentHTMLBodyText = new SimpleStringProperty(this, CONTENT_HTML_BODY_TEXT_PROP);
     
     private final List<Listener> listeners = new ArrayList<>();
     
@@ -84,6 +77,111 @@ public class LogEntry {
      */
     protected int listenerDisableCount;
     
+    
+    
+    /**
+     * Defines the {@link TimePeriod} of the log entry.
+     */
+    private final ObjectProperty<TimePeriod> timePeriod = new SimpleObjectProperty<>(this, TIME_PERIOD_PROP, TimePeriod.now());
+
+    public final ObjectProperty<TimePeriod> timePeriodProperty() {
+        return this.timePeriod;
+    }
+    public final TimePeriod getTimePeriod() {
+        return this.timePeriod.get();
+    }
+    public final void setTimePeriod(TimePeriod value) {
+        this.timePeriod.set(value);
+    }
+    
+    
+    
+    /**
+     * Defines the zoneId associated with the log entry. The zone id is typically the
+     * zone id associated with the location of where the log entry started. Changing the
+     * zone id does not change the start instant of the log entry.
+     */
+    private final ObjectProperty<ZoneId> zoneId = new SimpleObjectProperty<>(this, ZONE_ID_PROP, ZoneId.systemDefault());
+
+    public final ObjectProperty<ZoneId> zoneId() {
+        return this.zoneId;
+    }
+    public final ZoneId getZoneId() {
+        return this.zoneId.get();
+    }
+    public final void setZoneId(ZoneId value) {
+        if (value == null) {
+            value = ZoneId.systemDefault();
+        }
+        this.zoneId.set(value);
+    }
+    
+
+
+    /**
+     * Defines the title of the log entry.
+     */
+    private final StringProperty title = new SimpleStringProperty(this, TITLE_PROP);
+
+    public final StringProperty titleProperty() {
+        return title;
+    }
+    public final String getTitle() {
+        return title.get();
+    }
+    public final void setTitle(String value) {
+        title.set(value);
+    }
+    
+    
+
+    /**
+     * Defines the latest author of the log entry.
+     */
+    private final StringProperty latestAuthor = new SimpleStringProperty(this, LATEST_AUTHOR_PROP);
+
+    public final StringProperty latestAuthorProperty() {
+        return latestAuthor;
+    }
+    public final String getLatestAuthor() {
+        return latestAuthor.get();
+    }
+    public final void setLatestAuthor(String value) {
+        latestAuthor.set(value);
+    }
+
+    
+    /**
+     * Defines the set of tags associated with the log entry.
+     */
+    private final SetProperty<String> tags = new SimpleSetProperty<>(this, TAGS_PROP, FXCollections.observableSet(new HashSet<>()));
+    
+    public final SetProperty<String> tagsProperty() {
+        return tags;
+    }
+    public final ObservableSet<String> getTags() {
+        return tags.get();
+    }
+    
+    
+    /**
+     * Defines the content of the log entry as HTML text that appears
+     * within a &lt;body&gt; element, the &lt;body&gt; element is not included.
+     * @return The content property.
+     */
+    private final StringProperty contentHTMLBodyText = new SimpleStringProperty(this, CONTENT_HTML_BODY_TEXT_PROP);
+
+    public final StringProperty contentHTMLBodyText() {
+        return contentHTMLBodyText;
+    }
+    public final String getContentHTMLBodyText() {
+        return contentHTMLBodyText.get();
+    }
+    public final void setContentHTMLBodyText(String value) {
+        contentHTMLBodyText.set(value);
+    }
+
+
     
     /**
      * Constructor.
@@ -154,7 +252,7 @@ public class LogEntry {
         logEntry.setLatestAuthor(jsonObject.optString(LATEST_AUTHOR_PROP, null));
         
         JSONArray tags = jsonObject.getJSONArray(TAGS_PROP);
-        JSONUtil.arrayToSet(tags, logEntry.tagsSet);
+        JSONUtil.arrayToSet(tags, logEntry.tags.get());
         
         logEntry.setContentHTMLBodyText(jsonObject.optString(CONTENT_HTML_BODY_TEXT_PROP, null));
         
@@ -172,7 +270,7 @@ public class LogEntry {
         TimePeriod.zoneIdToJSON(jsonObject, ZONE_ID_PROP, this.zoneId.get());
         jsonObject.put(TITLE_PROP, this.title.get());
         jsonObject.put(LATEST_AUTHOR_PROP, this.latestAuthor.get());
-        jsonObject.put(TAGS_PROP, this.tagsSet);
+        jsonObject.put(TAGS_PROP, this.tags.get());
         jsonObject.put(CONTENT_HTML_BODY_TEXT_PROP, this.contentHTMLBodyText.get());
     }
     
@@ -211,59 +309,6 @@ public class LogEntry {
         }
         return null;
     }
-    
-    
-    /**
-     * @return The value of the timePeriod property.
-     */
-    public final TimePeriod getTimePeriod() {
-        return this.timePeriod.get();
-    }
-    
-    /**
-     * Sets the value of the timePeriod property.
-     * @param value 
-     */
-    public final void setTimePeriod(TimePeriod value) {
-        this.timePeriod.set(value);
-    }
-    
-    /**
-     * Defines the {@link TimePeriod} of the log entry.
-     * @return The timePeriod property.
-     */
-    public final ObjectProperty<TimePeriod> timePeriodProperty() {
-        return this.timePeriod;
-    }
-    
-    /**
-     * 
-     * @return The value of the zone id.
-     */
-    public final ZoneId getZoneId() {
-        return this.zoneId.get();
-    }
-    
-    /**
-     * Sets the value of the zoneId property.
-     * @param value 
-     */
-    public final void setZoneId(ZoneId value) {
-        if (value == null) {
-            value = ZoneId.systemDefault();
-        }
-        this.zoneId.set(value);
-    }
-    
-    /**
-     * Defines the zoneId associated with the log entry. The zone id is typically the
-     * zone id associated with the location of where the log entry started. Changing the
-     * zone id does not change the start instant of the log entry.
-     * @return The zoneId property.
-     */
-    public final ObjectProperty<ZoneId> zoneId() {
-        return this.zoneId;
-    }
 
     @Override
     public int hashCode() {
@@ -273,7 +318,7 @@ public class LogEntry {
         hash = 79 * hash + Objects.hashCode(this.zoneId.get());
         hash = 79 * hash + Objects.hashCode(this.title.get());
         hash = 79 * hash + Objects.hashCode(this.latestAuthor.get());
-        hash = 79 * hash + Objects.hashCode(this.tagsSet);
+        hash = 79 * hash + Objects.hashCode(this.tags.get());
         hash = 79 * hash + Objects.hashCode(this.contentHTMLBodyText.get());
         return hash;
     }
@@ -305,7 +350,7 @@ public class LogEntry {
         if (!Objects.equals(this.latestAuthor.get(), other.latestAuthor.get())) {
             return false;
         }
-        if (!Objects.equals(this.tagsSet, other.tagsSet)) {
+        if (!Objects.equals(this.tags.get(), other.tags.get())) {
             return false;
         }
         if (!Objects.equals(this.contentHTMLBodyText.get(), other.contentHTMLBodyText.get())) {
@@ -401,94 +446,6 @@ public class LogEntry {
      */
     public final void setDate(LocalDate date) {
         setDate(date, null);
-    }
-    
-    /**
-     * @return The value of the title property.
-     */
-    public final String getTitle() {
-        return title.get();
-    }
-
-    /**
-     * Sets the value of the title property.
-     * @param value 
-     */
-    public final void setTitle(String value) {
-        title.set(value);
-    }
-
-    /**
-     * Defines the title of the log entry.
-     * @return The title property.
-     */
-    public final StringProperty titleProperty() {
-        return title;
-    }
-    
-    
-    /**
-     * @return The value of the latestAuthor property.
-     */
-    public final String getLatestAuthor() {
-        return latestAuthor.get();
-    }
-
-    /**
-     * Sets the value of the latestAuthor property.
-     * @param value 
-     */
-    public final void setLatestAuthor(String value) {
-        latestAuthor.set(value);
-    }
-
-    /**
-     * Defines the latest author of the log entry.
-     * @return The latestAuthor property.
-     */
-    public final StringProperty latestAuthorProperty() {
-        return latestAuthor;
-    }
-
-    
-    /**
-     * @return The observable set underlying the tags property.
-     */
-    public final ObservableSet<String> getTags() {
-        return tags.get();
-    }
-    
-    /**
-     * Defines the set of tags associated with the log entry.
-     * @return The tags property.
-     */
-    public final SetProperty<String> tagsProperty() {
-        return tags;
-    }
-    
-    
-    /**
-     * @return The value of the contentHTMLBodyText property.
-     */
-    public final String getContentHTMLBodyText() {
-        return contentHTMLBodyText.get();
-    }
-    
-    /**
-     * Sets the value of the contentHTMLBodyText property.
-     * @param value The new value.
-     */
-    public final void setContentHTMLBodyText(String value) {
-        contentHTMLBodyText.set(value);
-    }
-    
-    /**
-     * Defines the content of the log entry as HTML text that appears
-     * within a &lt;body&gt; element, the &lt;body&gt; element is not included.
-     * @return The content property.
-     */
-    public final StringProperty contentHTMLBodyText() {
-        return contentHTMLBodyText;
     }
     
     

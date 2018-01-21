@@ -30,42 +30,34 @@ import javafx.collections.ObservableList;
  * @author Albert Santos
  */
 public class DayLogEntries {
+    /**
+     * Defines the {@link LocalDate} represented by this object. Read-only.
+     */
     private final ReadOnlyObjectWrapper<LocalDate> localDate = new ReadOnlyObjectWrapper<>(this, "localDate");
 
-    /**
-     * @return The value of the localDate property.
-     */
+    public final ReadOnlyObjectProperty<LocalDate> localDateProperty() {
+        return localDate.getReadOnlyProperty();
+    }
     public final LocalDate getLocalDate() {
         // LocalDate is immutable, we don't have to call getReadOnlyProperty()...
         return localDate.get();
     }
     
-    /**
-     * Defines the {@link LocalDate} represented by this object. Read-only.
-     * @return The property.
-     */
-    public final ReadOnlyObjectProperty<LocalDate> localDateProperty() {
-        return localDate.getReadOnlyProperty();
-    }
 
+    /**
+     * Defines a list of the {@link LogEntry} that have any part within this object's local date.
+     */
 
     final ObservableList<LogEntry> logEntries = FXCollections.observableArrayList();
     final ReadOnlyListWrapper<LogEntry> readOnlyLogEntries = new ReadOnlyListWrapper<>(this, "logEntries", logEntries);
     
-    /**
-     * @return The value of the logEntries property.
-     */
+    public final ReadOnlyListProperty<LogEntry> logEntriesProperty() {
+        return readOnlyLogEntries.getReadOnlyProperty();
+    }
     public final ObservableList<LogEntry> getLogEntries() {
         return readOnlyLogEntries.getReadOnlyProperty().get();
     }
     
-    /**
-     * Defines a list of the {@link LogEntry} that have any part within this object's local date.
-     * @return The property.
-     */
-    public final ReadOnlyListProperty<LogEntry> logEntriesProperty() {
-        return readOnlyLogEntries.getReadOnlyProperty();
-    }
     
     /**
      * Constructor.

@@ -54,30 +54,32 @@ public class LogBookEditor {
     String activeAuthor;
     
     final Preferences preferences;
-    private final ReadOnlyObjectWrapper<LogBookFile> logBookFile = new ReadOnlyObjectWrapper<>(this, "logBookFile");
-    
-    public LogBookEditor(Preferences preferences) {
-        this.preferences = preferences;
-        
-        this.activeAuthor = preferences.get(PREFS_ACTIVE_AUTHOR_NAME, "");
-        if (this.activeAuthor.isEmpty()) {
-            this.activeAuthor = System.getProperty("user.name");
-        }
-    }
-    
-    /**
-     * @return The value of the log book file property.
-     */
-    public final LogBookFile getLogBookFile() {
-        return this.logBookFile.get();
-    }
-    
+
+
     /**
      * Defines the log book that's currently being edited.
      * @return The logBookFile property.
      */
+    private final ReadOnlyObjectWrapper<LogBookFile> logBookFile = new ReadOnlyObjectWrapper<>(this, "logBookFile");
+
     public final ReadOnlyObjectProperty<LogBookFile> logBookFileProperty() {
         return this.logBookFile.getReadOnlyProperty();
+    }
+    public final LogBookFile getLogBookFile() {
+        return this.logBookFile.get();
+    }
+  
+    
+    
+    public LogBookEditor(Preferences preferences) {
+        this.preferences = (preferences == null) ? Preferences.userNodeForPackage(this.getClass()) : preferences;
+        
+        if (this.preferences != null) {
+            this.activeAuthor = preferences.get(PREFS_ACTIVE_AUTHOR_NAME, "");
+            if (this.activeAuthor.isEmpty()) {
+                this.activeAuthor = System.getProperty("user.name");
+            }
+        }
     }
     
     protected void generatePromptMessagesForFileException(String prefixId, ArrayList<String> promptMsgs, LogBookFile.FileException ex) {

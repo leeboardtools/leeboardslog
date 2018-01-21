@@ -21,7 +21,6 @@ import com.leeboardtools.util.StringListConverter;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
-import java.util.SortedMap;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -34,7 +33,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import leeboardslog.LeeboardsLog;
 import leeboardslog.data.DayLogEntries;
-import leeboardslog.data.LogEntry;
 
 
 /**

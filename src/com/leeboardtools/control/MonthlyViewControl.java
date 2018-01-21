@@ -69,27 +69,17 @@ public class MonthlyViewControl <T> extends MultiDayView<T> {
     //
     //--------------------------------------------------------------------------
     // firstDayOfWeek Property
-    private final ObjectProperty<DayOfWeek> firstDayOfWeek = new SimpleObjectProperty<>(this, "firstDayOfWeek", DayOfWeek.SUNDAY);
-
-    /**
-     * @return The value of the firstDayOfWeek property.
-     */
-    public final DayOfWeek getFirstDayOfWeek() {
-        return firstDayOfWeek.get();
-    }
-    
-    /**
-     * Sets the value of the firstDayOfWeek property.
-     * @param dayOfWeek The value to set.
-     */
-    public final void setFirstDayOfWeek(DayOfWeek dayOfWeek) {
-        firstDayOfWeek.set(dayOfWeek);
-    }
     
     /**
      * Defines the day of the week that appears in the left-most column.
-     * @return The firstDayOfWeek property.
      */
+    private final ObjectProperty<DayOfWeek> firstDayOfWeek = new SimpleObjectProperty<>(this, "firstDayOfWeek", DayOfWeek.SUNDAY);
+    public final DayOfWeek getFirstDayOfWeek() {
+        return firstDayOfWeek.get();
+    }
+    public final void setFirstDayOfWeek(DayOfWeek dayOfWeek) {
+        firstDayOfWeek.set(dayOfWeek);
+    }
     public final ObjectProperty<DayOfWeek> firstDayOfWeekProperty() {
         return firstDayOfWeek;
     }
