@@ -23,16 +23,22 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyMapProperty;
+import javafx.beans.property.ReadOnlyMapWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -59,6 +65,9 @@ public class LogBook {
     private final Map<String, EntryMaster> masterLogEntries = new HashMap<>();
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByStart = new TreeMap<>(new LogEntry.TimePeriodStartComparator());
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByEnd = new TreeMap<>(new LogEntry.TimePeriodEndComparator());
+    private final ObservableMap<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> entriesByDate = FXCollections.observableHashMap();
+    private final ReadOnlyMapWrapper<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> readOnlyEntriesByDate 
+            = new ReadOnlyMapWrapper<>(FXCollections.unmodifiableObservableMap(entriesByDate));
     
     private final List<Listener> listeners = new ArrayList<>();
 
@@ -401,8 +410,36 @@ public class LogBook {
      * @return The collection contains the log entries.
      */
     public final Collection<LogEntry> getLogEntriesWithDate(LocalDate date, Collection<LogEntry> logEntries) {
-        final TimePeriod timePeriod = TimePeriod.fromEdgeDates(date, date, this.getCurrentZoneId());
-        return getLogEntriesInTimePeriod(timePeriod, logEntries);
+        if (logEntries == null) {
+            logEntries = new TreeSet<>(new LogEntry.StartComparator());
+        }
+        
+        final Collection<LogEntry> destEntries = logEntries;
+        SortedMap<LogEntry.TimePeriodKey, LogEntry> entriesMap = this.entriesByDate.get(date);
+        if (entriesMap != null) {
+            entriesMap.forEach((key, value) -> { 
+                destEntries.add(value);
+            });
+        }
+        return logEntries;
+    }
+    
+    
+    /**
+     * @return The value of the entriesByDate property.
+     */
+    public final ObservableMap<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> getEntriesByDate() {
+        return readOnlyEntriesByDate.getReadOnlyProperty().get();
+    }
+    
+    /**
+     * Defines a read-only map whose keys are the local dates of all log entries and whose values
+     * are sets containing the log entries that are partly or entirely in the key date.
+     * Note that the sets must not be modified.
+     * @return The entriesByDate property.
+     */
+    public final ReadOnlyMapProperty<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> entriesByDateProperty() {
+        return readOnlyEntriesByDate.getReadOnlyProperty();
     }
     
     
@@ -414,10 +451,12 @@ public class LogBook {
     private class EntryMaster implements LogEntry.Listener {
         final LogEntry logEntry;
         LogEntry.TimePeriodKey timePeriodKey;
+        final Set<LocalDate> localDates = new HashSet<>();
         
         EntryMaster(LogEntry logEntry) {
             this.logEntry = logEntry;
             this.timePeriodKey = new LogEntry.TimePeriodKey(logEntry);
+            this.timePeriodKey.timePeriod.getDates(this.localDates, getCurrentZoneId());
         }
         
         boolean equals(EntryMaster other) {
@@ -447,11 +486,30 @@ public class LogBook {
     private void addEntryMaster(EntryMaster entryMaster) {
         this.entriesByStart.put(entryMaster.timePeriodKey, entryMaster);
         this.entriesByEnd.put(entryMaster.timePeriodKey, entryMaster);
+        
+        entryMaster.localDates.forEach((date) -> {
+            SortedMap<LogEntry.TimePeriodKey, LogEntry> mapEntry = this.entriesByDate.get(date);
+            if (mapEntry == null) {
+                mapEntry = new TreeMap<>();
+                this.entriesByDate.put(date, mapEntry);
+            }
+            mapEntry.put(entryMaster.timePeriodKey, entryMaster.logEntry);
+        });
     }
     
     private void removeEntryMaster(EntryMaster entryMaster) {
         this.entriesByStart.remove(entryMaster.timePeriodKey);
         this.entriesByEnd.remove(entryMaster.timePeriodKey);
+        
+        entryMaster.localDates.forEach((date)-> {
+            SortedMap<LogEntry.TimePeriodKey, LogEntry> mapEntry = this.entriesByDate.get(date);
+            if (mapEntry != null) {
+                mapEntry.remove(entryMaster.timePeriodKey);
+                if (mapEntry.isEmpty()) {
+                    this.entriesByDate.remove(date);
+                }
+            }
+        });
     }
     
     

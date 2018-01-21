@@ -24,10 +24,15 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import javafx.collections.ObservableMap;
 import org.json.JSONObject;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -251,6 +256,32 @@ public class LogBookTest {
         
         assertTrue(entriesToFind.isEmpty());
     }
+    
+    void assertLogEntriesByDate(TreeMap<LocalDate, Collection<LogEntry>> refDateEntries, LogBook logBook) {
+        ObservableMap<LocalDate, SortedMap<LogEntry.TimePeriodKey, LogEntry>> entriesByDate = logBook.getEntriesByDate();
+        assertEquals(refDateEntries.size(), entriesByDate.size());
+        
+        refDateEntries.forEach((key, refEntries) -> {
+            SortedMap<LogEntry.TimePeriodKey, LogEntry> testEntries = entriesByDate.get(key);
+            assertNotEquals(null, testEntries);
+            
+            assertEquals(refEntries.size(), testEntries.size());
+            
+            refEntries.forEach((logEntry) -> {
+                assertTrue(testEntries.containsValue(logEntry));
+            });
+        });
+    }
+    
+    void addLogEntryDate(TreeMap<LocalDate, Collection<LogEntry>> dateEntries, LocalDate date, LogEntry logEntry) {
+        Collection<LogEntry> entries = dateEntries.get(date);
+        if (entries == null) {
+            entries = new HashSet<>();
+            dateEntries.put(date, entries);
+        }
+        entries.add(logEntry);
+    }
+    
 
     /**
      * Test of getLogEntriesByStart method, of class LogBook.
@@ -639,6 +670,28 @@ public class LogBookTest {
         testLogEntries = logBook.getLogEntriesByStart();
         assertLogEntriesCollections(refSortedLogEntries, testLogEntries);
 
+
+        // Verify the entries by date are not screwed up.
+        TreeMap<LocalDate, Collection<LogEntry>> refEntriesByDate = new TreeMap<>();
+//        LogEntry logEntryA = newLogEntry(TimePeriod.fromEdgeTimes(
+//                LocalDateTime.of(2017, 1, 5, 12, 0), LocalDateTime.of(2017, 1, 5, 12, 30), zoneId), zoneId, "Entry A");
+        addLogEntryDate(refEntriesByDate, LocalDate.of(2017, 1, 5), logEntryA);
+        
+//        TimePeriod timePeriod = TimePeriod.fromEdgeTimes(
+//                LocalDateTime.of(2017, 1, 10, 12, 0), LocalDateTime.of(2017, 1, 10, 12, 30), zoneId);
+        addLogEntryDate(refEntriesByDate, LocalDate.of(2017, 1, 10), logEntryB_1);
+        
+//        LogEntry logEntryC = newLogEntry(TimePeriod.fromEdgeTimes(
+//                LocalDateTime.of(2017, 1, 7, 12, 0), LocalDateTime.of(2017, 1, 7, 12, 30), zoneId), zoneId, "Entry C");
+        addLogEntryDate(refEntriesByDate, LocalDate.of(2017, 1, 7), logEntryC);
+
+//        LogEntry logEntryD = newLogEntry(TimePeriod.fromEdgeTimes(
+//                LocalDateTime.of(2017, 1, 6, 12, 0), LocalDateTime.of(2017, 1, 7, 12, 30), zoneId), zoneId, "Entry D");
+        addLogEntryDate(refEntriesByDate, LocalDate.of(2017, 1, 6), logEntryD);
+        addLogEntryDate(refEntriesByDate, LocalDate.of(2017, 1, 7), logEntryD);
+        assertLogEntriesByDate(refEntriesByDate, logBook);
+
+        
         listener.assertRemovedCount(1);
         listener.assertAddedCount(1);
     }

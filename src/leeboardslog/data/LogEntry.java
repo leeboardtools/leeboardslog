@@ -551,7 +551,7 @@ public class LogEntry {
     /**
      * A helper object for sorting log entries by time period.
      */
-    public static class TimePeriodKey {
+    public static class TimePeriodKey implements Comparable<TimePeriodKey> {
         final String guid;
         final TimePeriod timePeriod;
         
@@ -592,6 +592,15 @@ public class LogEntry {
                 return false;
             }
             return true;
+        }
+
+        @Override
+        public int compareTo(TimePeriodKey o) {
+            int result = this.timePeriod.compareTo(o.timePeriod);
+            if (result != 0) {
+                return result;
+            }
+            return this.guid.compareTo(o.guid);
         }
         
     }

@@ -20,6 +20,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collection;
+import java.util.Iterator;
 import org.json.JSONObject;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -204,6 +206,39 @@ public class TimePeriodTest {
         result = timePeriod.containsDate(date, zoneId);
         assertFalse(result);
         
+    }
+    
+    void checkLocalDates(LocalDate [] refDates, Collection<LocalDate> testDates) {
+        assertEquals(refDates.length, testDates.size());
+        Iterator<LocalDate> iterator = testDates.iterator();
+        for (int i = 0; i < refDates.length; ++i) {
+            assertEquals(refDates[i], iterator.next());
+            iterator.hasNext();
+        }
+    }
+    
+    @Test
+    public void testGetDates() {
+        System.out.println("getDates");
+
+        ZoneId zoneId = ZoneId.of("Europe/Paris");
+        LocalDateTime dateTimeA = LocalDateTime.of(2017, 3, 12, 1, 0);
+        LocalDateTime dateTimeB = LocalDateTime.of(2017, 3, 14, 10, 30);
+        TimePeriod timePeriod = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeB, zoneId);
+        
+        Collection<LocalDate> testDates = timePeriod.getDates(null, zoneId);
+        checkLocalDates(
+                new LocalDate[] { LocalDate.of(2017, 3, 12), LocalDate.of(2017, 3, 13), LocalDate.of(2017, 3, 14) }, 
+                testDates);
+
+        // Check the edge times...
+        dateTimeA = LocalDateTime.of(2017, 3, 12, 0, 0);
+        dateTimeB = LocalDateTime.of(2017, 3, 15, 0, 0);
+        timePeriod = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeB, zoneId);
+        testDates = timePeriod.getDates(null, zoneId);
+        checkLocalDates(
+                new LocalDate[] { LocalDate.of(2017, 3, 12), LocalDate.of(2017, 3, 13), LocalDate.of(2017, 3, 14) }, 
+                testDates);
     }
 
     /**

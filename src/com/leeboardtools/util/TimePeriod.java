@@ -21,8 +21,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.zone.ZoneRulesException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import org.json.JSONException;
@@ -341,6 +344,40 @@ public class TimePeriod implements Comparable <TimePeriod> {
                 return false;
         }
         return true;
+    }
+    
+    
+    /**
+     * Fills a collection with the local dates spanned by the time period.
+     * @param dates The collection to add the dates to, if <code>null</code> then an {@link ArrayList} will
+     * be created.
+     * @param zoneId    The zone id of the date-times, if <code>null</code> {@link ZoneId#systemDefault() } is
+     * called to obtain the zone id.
+     * @return The collection containing the local dates.
+     */
+    public final Collection<LocalDate> getDates(Collection<LocalDate> dates, ZoneId zoneId) {
+        if (dates == null) {
+            dates = new ArrayList<>();
+        }
+        if (zoneId == null) {
+            zoneId = ZoneId.systemDefault();
+        }
+        
+        LocalDate date = this.startInstant.atZone(zoneId).toLocalDate();
+        LocalDateTime endDateTime = LocalDateTime.ofInstant(this.endInstant, zoneId);
+        LocalDate endDate = endDateTime.toLocalDate();
+        if (!endDate.atStartOfDay().equals(endDateTime)) {
+            endDate = endDate.plusDays(1);
+        }
+        
+        while (true) {
+            dates.add(date);
+            date = date.plusDays(1);
+            if (!date.isBefore(endDate)) {
+                break;
+            }
+        }
+        return dates;
     }
     
     
