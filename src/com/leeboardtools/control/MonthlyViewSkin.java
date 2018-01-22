@@ -33,24 +33,24 @@ import javafx.scene.text.TextAlignment;
 import javafx.util.Callback;
 
 /**
- * Default skin for {@link MonthlyViewControl}.
+ * Default skin for {@link MonthlyView}.
  * <p>
  * The skin maintains a 6 rows by 7 columns grid of {@link DayCell}s. The day cells are 
- * optionally created via the {@link MonthlyViewControl#dayCellFactoryProperty() } callback.
+ * optionally created via the {@link MonthlyView#dayCellFactoryProperty() } callback.
  * <p>
  * The day cells are in turn responsible for their contents/skin.
  * 
  * @author Albert Santos
  */
-public class MonthlyViewSkin<T> extends SkinBase<MonthlyViewControl> {
+public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
     
     private final GridPane gridPane = new GridPane();
     private final Node dayOfWeekNodes[] = new Node [7];
     
-    private final static int NUMBER_DAY_CELL_ROWS = MonthlyViewControl.NUMBER_DAY_CELL_ROWS;
+    private final static int NUMBER_DAY_CELL_ROWS = MonthlyView.NUMBER_DAY_CELL_ROWS;
     private final DayCell<T> dayCells [] = new DayCell [NUMBER_DAY_CELL_ROWS * 7];
     
-    public MonthlyViewSkin(final MonthlyViewControl control) {
+    public MonthlyViewSkin(final MonthlyView control) {
         super(control);
         
         gridPane.getStyleClass().add("monthly-view-grid");
@@ -113,8 +113,8 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyViewControl> {
     }
     
     final DayCell<T> createDayCell(int dayCellRow, int dayCellCol) {
-        MonthlyViewControl<T> control = getSkinnable();
-        Callback<MonthlyViewControl, DayCell<T>> factory = control.getDayCellFactory();
+        MonthlyView<T> control = getSkinnable();
+        Callback<MonthlyView, DayCell<T>> factory = control.getDayCellFactory();
         if (factory != null) {
             return factory.call(control);
         }
@@ -126,7 +126,7 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyViewControl> {
     }
     
     protected final void updateFirstDayOfWeek() {
-        MonthlyViewControl control = getSkinnable();
+        MonthlyView control = getSkinnable();
         DayOfWeek dayOfWeek = control.getFirstDayOfWeek();
         for (int i = 0; i < 7; ++i) {
             int dayOfWeekIndex = dayOfWeek.getValue() - 1;
@@ -139,7 +139,7 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyViewControl> {
     }
     
     protected final void updateDatesDisplayed() {
-        MonthlyViewControl control = getSkinnable();
+        MonthlyView control = getSkinnable();
         LocalDate date = control.getFirstVisibleDate();
         LocalDate today = LocalDate.now();
         LocalDate activeDate = control.getActiveDate();

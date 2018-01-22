@@ -16,7 +16,7 @@
 package leeboardslog.ui;
 
 import com.leeboardtools.control.LocalDateSpinnerValueFactory;
-import com.leeboardtools.control.MonthlyViewControl;
+import com.leeboardtools.control.MonthlyView;
 import com.leeboardtools.util.StringListConverter;
 import java.net.URL;
 import java.time.LocalDate;
@@ -52,7 +52,7 @@ public class MonthlyController implements Initializable {
     @FXML
     private BorderPane mainPane;
     
-    private MonthlyViewControl<DayLogEntries> monthlyViewControl;
+    private MonthlyView<DayLogEntries> monthlyViewControl;
     private LogBookEditor logBookEditor;
     
     private final ObjectProperty<LocalDate> activeDate = new SimpleObjectProperty<>(this, "activeDate", LocalDate.now());
@@ -103,7 +103,7 @@ public class MonthlyController implements Initializable {
             yearValueFactory.setValue(newValue);
         });
         
-        this.monthlyViewControl = new MonthlyViewControl<>();
+        this.monthlyViewControl = new MonthlyView<>();
         this.mainPane.setCenter(this.monthlyViewControl);
         
         this.monthlyViewControl.setStringListConverter(new DayLogEntriesConverter());

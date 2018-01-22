@@ -51,7 +51,7 @@ import javafx.util.Callback;
  * @author Albert Santos
  * @param <T> Used to represent the type of the objects stored in the view's {@link ObservableMap},
  */
-public class MonthlyViewControl <T> extends MultiDayView<T> {
+public class MonthlyView <T> extends MultiDayView<T> {
     private static final String DEFAULT_STYLE_CLASS = "monthly-view-control";
 
     public final static int NUMBER_DAY_CELL_ROWS = 6;
@@ -85,7 +85,7 @@ public class MonthlyViewControl <T> extends MultiDayView<T> {
     }
     
 
-    // TODO Add DefaultSkin, implements SkinBase<MonthlyViewControl>
+    // TODO Add DefaultSkin, implements SkinBase<MonthlyView>
     // This is what sets up the grid, that way we can overload the grid.
 
     // selectedDate
@@ -99,7 +99,7 @@ public class MonthlyViewControl <T> extends MultiDayView<T> {
     // TODO selectedDate? Look into JavaFX selection model.
     // TODO look into CSS styling, how to apply it to the control.
     
-    public MonthlyViewControl() {
+    public MonthlyView() {
         getStyleClass().add(DEFAULT_STYLE_CLASS);
         
         this.firstDayOfWeek.addListener((e) -> {

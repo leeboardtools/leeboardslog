@@ -54,7 +54,7 @@ public abstract class MultiDayView <T> extends Control {
     // items Property
     
     /**
-     * The underlying data model for the {@link MonthlyViewControl}.
+     * The underlying data model for the {@link MonthlyView}.
      */
     private final MapProperty<LocalDate, T> items = new SimpleMapProperty<>(this, "items");
 
@@ -77,15 +77,15 @@ public abstract class MultiDayView <T> extends Control {
      * Defines an optional factory callback for creating the cells representing the
      * days of the month.
      */
-    private ObjectProperty<Callback<MonthlyViewControl, DayCell<T>>> dayCellFactory;
+    private ObjectProperty<Callback<MonthlyView, DayCell<T>>> dayCellFactory;
 
-    public final ObjectProperty<Callback<MonthlyViewControl, DayCell<T>>> dayCellFactoryProperty() {
+    public final ObjectProperty<Callback<MonthlyView, DayCell<T>>> dayCellFactoryProperty() {
         return dayCellFactory;
     }
-    public final Callback<MonthlyViewControl, DayCell<T>> getDayCellFactory() {
+    public final Callback<MonthlyView, DayCell<T>> getDayCellFactory() {
         return (dayCellFactory == null) ? null : dayCellFactory.get();
     }
-    public final void setDayCellFactory(Callback<MonthlyViewControl, DayCell<T>> factory) {
+    public final void setDayCellFactory(Callback<MonthlyView, DayCell<T>> factory) {
         if (this.dayCellFactory == null) {
             this.dayCellFactory = new SimpleObjectProperty<>(this, "dayCellFactory");
         }
@@ -100,15 +100,15 @@ public abstract class MultiDayView <T> extends Control {
      * Defines an optional factory callback for creating the cells representing the
      * contents of each day of the month. This cell is within the body of a DayCell.
      */
-    private ObjectProperty<Callback<MonthlyViewControl, Cell<T>>> cellFactory;
+    private ObjectProperty<Callback<MonthlyView, Cell<T>>> cellFactory;
 
-    public final ObjectProperty<Callback<MonthlyViewControl, Cell<T>>> cellFactoryProperty() {
+    public final ObjectProperty<Callback<MonthlyView, Cell<T>>> cellFactoryProperty() {
         return cellFactory;
     }
-    public final Callback<MonthlyViewControl, Cell<T>> getCellFactory() {
+    public final Callback<MonthlyView, Cell<T>> getCellFactory() {
         return (cellFactory == null) ? null : cellFactory.get();
     }
-    public final void setCellFactory(Callback<MonthlyViewControl, Cell<T>> factory) {
+    public final void setCellFactory(Callback<MonthlyView, Cell<T>> factory) {
         if (this.cellFactory == null) {
             this.cellFactory = new SimpleObjectProperty<>(this, "cellFactory");
         }
