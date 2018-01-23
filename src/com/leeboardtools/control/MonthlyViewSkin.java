@@ -30,7 +30,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.text.TextAlignment;
-import javafx.util.Callback;
 
 /**
  * Default skin for {@link MonthlyView}.
@@ -82,7 +81,8 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
             gridPane.getRowConstraints().add(rowConstraints);
             for (int col = 0; col < 7; ++col) {
                 int index = getDayCellIndex(dayCellRow, col);
-                DayCell dayCell = createDayCell(dayCellRow, col);
+                
+                DayCell dayCell = control.createDayCell();
                 this.dayCells[index] = dayCell;
                 gridPane.add(dayCell, col, dayCellRow + 1);
             }
@@ -110,15 +110,6 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
         label.setText(dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()));
         
         return label;
-    }
-    
-    final DayCell<T> createDayCell(int dayCellRow, int dayCellCol) {
-        MonthlyView<T> control = getSkinnable();
-        Callback<MonthlyView, DayCell<T>> factory = control.getDayCellFactory();
-        if (factory != null) {
-            return factory.call(control);
-        }
-        return new DayCell<>(control);
     }
     
     final int getDayCellIndex(int dayCellRow, int dayCellCol) {

@@ -15,14 +15,14 @@
  */
 package com.leeboardtools.control;
 
-import com.leeboardtools.util.FxUtil;
 import java.time.LocalDate;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.ObservableMap;
-import javafx.scene.Node;
 import javafx.scene.control.Cell;
-import javafx.scene.control.Label;
 import javafx.scene.control.Skin;
-import javafx.scene.layout.Pane;
 
 /**
  * Cell used to represent the contents of a day within a {@link MultiDayView} derived control.
@@ -32,54 +32,97 @@ import javafx.scene.layout.Pane;
 public class DayCell <T> extends Cell<LocalDate> {
     private static final String DEFAULT_STYLE_CLASS = "day-cell";
     protected final MultiDayView<T> control;
-    private boolean isSetup = false;
-    private Label dayOfMonthLabel;
-    private Pane headerPane;
-    private Pane bodyPane;
+    
 
+    protected Cell<T> headerCell;
+    
+    /**
+     * The header cell, may be <code>null</code>
+     * @return The cell.
+     */
+    public final Cell<T> getHeaderCell() {
+        return headerCell;
+    }
+    
+    
+    protected Cell<T> bodyCell;
+    
+    /**
+     * The body cell.
+     * @return The cell.
+     */
+    public final Cell<T> getBodyCell() {
+        return bodyCell;
+    }
+    
+    
+    /**
+     * The text for the current day of the month represented by the cell.
+     */
+    private final ReadOnlyStringWrapper dayOfMonthText = new ReadOnlyStringWrapper(this, "dayOfMonthText", "");
+    
+    public final ReadOnlyStringProperty dayOfMonthTextProperty() {
+        return dayOfMonthText.getReadOnlyProperty();
+    }
+    public String getDayOfMonthText() {
+        return dayOfMonthText.get();
+    }
+    
+    
+    /**
+     * The data item associated with the current date.
+     */
+    private final ReadOnlyObjectWrapper<T> itemData = new ReadOnlyObjectWrapper<>(this, "itemData", null);
+    
+    public final ReadOnlyObjectProperty<T> itemDataProperty() {
+        return itemData.getReadOnlyProperty();
+    }
+    public final T getItemData() {
+        return itemData.get();
+    }
+    
+    
+    /**
+     * Constructor.
+     * @param control The control calling this.
+     */
     public DayCell(final MultiDayView<T> control) {
         this.control = control;
         getStyleClass().add(DEFAULT_STYLE_CLASS);
     }
+    
+    /**
+     * This is called after the day cell is created by {@link MultiDayView#createDayCell() },
+     * it's where the header and body cells are created.
+     */
+    public void setupInnerCells() {
+        this.headerCell = control.createHeaderCell(this);
+        this.bodyCell = control.createBodyCell(this);
+    }
 
+    
     @Override
     protected void updateItem(LocalDate date, boolean empty) {
         super.updateItem(date, empty);
 
-        updateDayOfMonthLabel(date);        
-        
-        ObservableMap<LocalDate, T> items = this.control.getItems();
-        T item = (items != null) ? items.get(date) : null;
-        updateDayItem(item);
-    }
-    
-    protected void updateDayOfMonthLabel(LocalDate date) {
-        if (this.dayOfMonthLabel != null) {
-            if (date != null) {
-                this.dayOfMonthLabel.setText(Integer.toString(date.getDayOfMonth()));
-            }
-            else {
-                this.dayOfMonthLabel.setText(null);
-            }
+        T item = null;
+        if ((date == null) || empty) {
+            this.dayOfMonthText.set("");
         }
-    }
-    
-    protected void updateDayItem(T item) {
-        
-    }
+        else {
+            this.dayOfMonthText.set(Integer.toString(date.getDayOfMonth()));
 
-    protected void loadNodes() {
-        Node node = FxUtil.getChildWithId(this, MultiDayView.DAY_OF_MONTH_NODE_ID);
-        if (node instanceof Label) {
-            this.dayOfMonthLabel = (Label) node;
+            ObservableMap<LocalDate, T> items = this.control.getItems();
+            item = (items != null) ? items.get(date) : null;
         }
-        node = FxUtil.getChildWithId(this, MultiDayView.DATE_HEADER_NODE_ID);
-        if (node instanceof Pane) {
-            this.headerPane = (Pane) node;
+        
+        this.itemData.set(item);
+        
+        if (this.headerCell != null) {
+            this.headerCell.setItem(item);
         }
-        node = FxUtil.getChildWithId(this, MultiDayView.DATE_BODY_NODE_ID);
-        if (node instanceof Pane) {
-            this.bodyPane = (Pane) node;
+        if (this.bodyCell != null) {
+            this.bodyCell.setItem(item);
         }
     }
 
@@ -88,15 +131,4 @@ public class DayCell <T> extends Cell<LocalDate> {
         return new DayCellSkin(this);
     }
 
-    @Override
-    protected void layoutChildren() {
-        super.layoutChildren();
-
-        if (!this.isSetup) {
-            this.isSetup = true;
-            loadNodes();
-            updateItem(this.itemProperty().get(), this.emptyProperty().get());
-        }
-    }
-    
 }

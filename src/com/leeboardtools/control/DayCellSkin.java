@@ -31,28 +31,39 @@ import javafx.scene.layout.VBox;
  * @param <T>   The type of the item contained within the day cell..
  */
 public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
-    
+    Label dayLabel;
+
+    /**
+     * Constructor.
+     * @param control The control this is for.
+     */
     public DayCellSkin(DayCell<T> control) {
         super(control);
         setupSkin();
     }
-
+    
     private void setupSkin() {
         VBox vBox = new VBox();
+        vBox.setFillWidth(true);
         
+        DayCell<T> control = getSkinnable();
         HBox hBoxHeader = new HBox();
-        Label dayLabel = new Label();
-        dayLabel.setId(MultiDayView.DAY_OF_MONTH_NODE_ID);
-        dayLabel.getStyleClass().add("day-of-month");
+        this.dayLabel = new Label(control.getDayOfMonthText());
+        this.dayLabel.getStyleClass().add("day-of-month");
+        control.dayOfMonthTextProperty().addListener((skinnable, oldValue, newValue) -> {
+            this.dayLabel.setText(newValue);
+        });
+        hBoxHeader.getChildren().add(this.dayLabel);
         
-        Pane headerPane = new Pane();
-        headerPane.setId(MultiDayView.DATE_HEADER_NODE_ID);
-        hBoxHeader.getChildren().addAll(dayLabel, headerPane);
+        if (control.getHeaderCell() != null) {
+            hBoxHeader.getChildren().add(control.getHeaderCell());
+        }
+
         vBox.getChildren().add(hBoxHeader);
-        
-        Pane bodyPane = new Pane();
-        bodyPane.setId(MultiDayView.DATE_BODY_NODE_ID);
-        vBox.getChildren().add(bodyPane);
+
+        if (control.getBodyCell() != null) {
+            vBox.getChildren().add(control.getBodyCell());
+        }
         
         getChildren().add(vBox);
     }

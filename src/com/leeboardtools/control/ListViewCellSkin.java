@@ -19,18 +19,19 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SkinBase;
 
 /**
- *
+ * The default skin used by {@link ListViewCell}.
  * @author Albert Santos
- * @param <T>
+ * @param <T>   The type of the item of the object.
+ * @param <S>   The type of the elements contained within the cell's ListView.
  */
-public class ListViewCellSkin<T> extends SkinBase<ListViewCell<T>> {
+public class ListViewCellSkin<T, S> extends SkinBase<ListViewCell<T, S>> {
+    private final ListView<S> listView;
     
-    public ListViewCellSkin(ListViewCell<T> control) {
+    public ListViewCellSkin(ListViewCell<T, S> control) {
         super(control);
-        setupSkin();
+        
+        this.listView = new ListView<>(control.getItems());
+        getChildren().add(this.listView);
     }
     
-    private void setupSkin() {
-        getChildren().add(new ListView<>());
-    }
 }

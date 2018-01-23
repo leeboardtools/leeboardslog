@@ -17,7 +17,6 @@ package leeboardslog.ui;
 
 import com.leeboardtools.control.LocalDateSpinnerValueFactory;
 import com.leeboardtools.control.MonthlyView;
-import com.leeboardtools.util.StringListConverter;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
@@ -33,6 +32,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import leeboardslog.LeeboardsLog;
 import leeboardslog.data.DayLogEntries;
+import com.leeboardtools.util.ListConverter;
 
 
 /**
@@ -68,9 +68,9 @@ public class MonthlyController implements Initializable {
     }
     
     
-    public static class DayLogEntriesConverter implements StringListConverter<DayLogEntries> {
+    public static class DayLogEntriesConverter implements ListConverter<DayLogEntries, String> {
         @Override
-        public ObservableList<String> toStringList(DayLogEntries object) {
+        public ObservableList<String> toList(DayLogEntries object) {
             ObservableList<String> strings = FXCollections.observableArrayList();
             if (object != null) {
                 object.getLogEntries().forEach((logEntry)-> {

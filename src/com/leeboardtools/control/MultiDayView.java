@@ -15,7 +15,6 @@
  */
 package com.leeboardtools.control;
 
-import com.leeboardtools.util.StringListConverter;
 import java.time.LocalDate;
 import javafx.beans.property.MapProperty;
 import javafx.beans.property.ObjectProperty;
@@ -27,6 +26,7 @@ import javafx.collections.ObservableMap;
 import javafx.scene.control.Cell;
 import javafx.scene.control.Control;
 import javafx.util.Callback;
+import com.leeboardtools.util.ListConverter;
 
 /**
  * Base class for views that display data associated with multiple days.
@@ -34,27 +34,10 @@ import javafx.util.Callback;
  * @param <T> Used to represent the type of the objects stored in the view's {@link ObservableMap},
  */
 public abstract class MultiDayView <T> extends Control {
-
-    /**
-     * The id used to identify the node where the day of month is displayed.
-     */
-    public static final String DAY_OF_MONTH_NODE_ID = "DayOfMonth";
-    /**
-     * The id used to identify the node containing the body of the date cell.
-     */
-    public static final String DATE_BODY_NODE_ID = "DateBody";
-    /**
-     * The id used to identify the node containing the header portion of the date cell.
-     */
-    public static final String DATE_HEADER_NODE_ID = "DateHeader";
     
     
-    //
-    //--------------------------------------------------------------------------
-    // items Property
-    
     /**
-     * The underlying data model for the {@link MonthlyView}.
+     * The underlying data model for the {@link MultiDayView}.
      */
     private final MapProperty<LocalDate, T> items = new SimpleMapProperty<>(this, "items");
 
@@ -69,69 +52,150 @@ public abstract class MultiDayView <T> extends Control {
     }
     
     
-    //
-    //--------------------------------------------------------------------------
-    // dayCellFactory Property
-    
     /**
      * Defines an optional factory callback for creating the cells representing the
      * days of the month.
      */
-    private ObjectProperty<Callback<MonthlyView, DayCell<T>>> dayCellFactory;
+    private ObjectProperty<Callback<MultiDayView, DayCell<T>>> dayCellFactory;
 
-    public final ObjectProperty<Callback<MonthlyView, DayCell<T>>> dayCellFactoryProperty() {
+    public final ObjectProperty<Callback<MultiDayView, DayCell<T>>> dayCellFactoryProperty() {
         return dayCellFactory;
     }
-    public final Callback<MonthlyView, DayCell<T>> getDayCellFactory() {
+    public final Callback<MultiDayView, DayCell<T>> getDayCellFactory() {
         return (dayCellFactory == null) ? null : dayCellFactory.get();
     }
-    public final void setDayCellFactory(Callback<MonthlyView, DayCell<T>> factory) {
+    public final void setDayCellFactory(Callback<MultiDayView, DayCell<T>> factory) {
         if (this.dayCellFactory == null) {
             this.dayCellFactory = new SimpleObjectProperty<>(this, "dayCellFactory");
         }
         this.dayCellFactory.set(factory);
     }
     
+    /**
+     * Creates a day cell.
+     * @return The day cell.
+     */
+    public DayCell<T> createDayCell() {
+        Callback<MultiDayView, DayCell<T>> factory = getDayCellFactory();
+        
+        DayCell<T> dayCell;
+        if (factory != null) {
+            dayCell = factory.call(this);
+        }
+        else {
+            dayCell = new DayCell<>(this);
+        }
+        
+        if (dayCell != null) {
+            dayCell.setupInnerCells();
+        }
+        return dayCell;
+        
+    }
     
-    //
-    //--------------------------------------------------------------------------
-    // cellFactory Property
+    
+    /**
+     * Used to pass information to the header and body cell factory callbacks.
+     * @param <T> 
+     */
+    public static class ContentsCellFactoryInfo<T> {
+        public final MultiDayView view;
+        public final DayCell<T> dayCell;
+        
+        public ContentsCellFactoryInfo(final MultiDayView view, final DayCell<T> dayCell) {
+            this.view = view;
+            this.dayCell = dayCell;
+        }
+    }
+    
     /**
      * Defines an optional factory callback for creating the cells representing the
-     * contents of each day of the month. This cell is within the body of a DayCell.
+     * header of the contents of each day of the month. This cell is within the body of a DayCell.
      */
-    private ObjectProperty<Callback<MonthlyView, Cell<T>>> cellFactory;
+    private ObjectProperty<Callback<ContentsCellFactoryInfo<T>, Cell<T>>> headerCellFactory;
 
-    public final ObjectProperty<Callback<MonthlyView, Cell<T>>> cellFactoryProperty() {
-        return cellFactory;
+    public final ObjectProperty<Callback<ContentsCellFactoryInfo<T>, Cell<T>>> headerCellFactoryProperty() {
+        return headerCellFactory;
     }
-    public final Callback<MonthlyView, Cell<T>> getCellFactory() {
-        return (cellFactory == null) ? null : cellFactory.get();
+    public final Callback<ContentsCellFactoryInfo<T>, Cell<T>> getHeaderCellFactory() {
+        return (headerCellFactory == null) ? null : headerCellFactory.get();
     }
-    public final void setCellFactory(Callback<MonthlyView, Cell<T>> factory) {
-        if (this.cellFactory == null) {
-            this.cellFactory = new SimpleObjectProperty<>(this, "cellFactory");
+    public final void setHeaderCellFactory(Callback<ContentsCellFactoryInfo<T>, Cell<T>> factory) {
+        if (this.headerCellFactory == null) {
+            this.headerCellFactory = new SimpleObjectProperty<>(this, "headerCellFactory");
         }
-        this.cellFactory.set(factory);
+        this.headerCellFactory.set(factory);
     }
     
 
+    /**
+     * Creates a header cell for a {@link DayCell}. This should only be called from a day cell.
+     * @param dayCell   The day cell the header cell is for.
+     * @return The header cell, <code>null</code> if header cells are not used.
+     */
+    public Cell<T> createHeaderCell(DayCell<T> dayCell) {
+        Callback<ContentsCellFactoryInfo<T>, Cell<T>> factory = getHeaderCellFactory();
+        if (factory != null) {
+            return factory.call(new ContentsCellFactoryInfo<>(this, dayCell));
+        }
+        
+        return null;
+    }
+    
+    
+    /**
+     * Defines an optional factory callback for creating the cells representing the
+     * body of the contents of each day of the month. This cell is within the body of a DayCell.
+     */
+    private ObjectProperty<Callback<ContentsCellFactoryInfo<T>, Cell<T>>> bodyCellFactory;
 
-    //
-    //--------------------------------------------------------------------------
-    // stringListConverter Property
+    public final ObjectProperty<Callback<ContentsCellFactoryInfo<T>, Cell<T>>> bodyCellFactoryProperty() {
+        return bodyCellFactory;
+    }
+    public final Callback<ContentsCellFactoryInfo<T>, Cell<T>> getBodyCellFactory() {
+        return (bodyCellFactory == null) ? null : bodyCellFactory.get();
+    }
+    public final void setBodyCellFactory(Callback<ContentsCellFactoryInfo<T>, Cell<T>> factory) {
+        if (this.bodyCellFactory == null) {
+            this.bodyCellFactory = new SimpleObjectProperty<>(this, "bodyCellFactory");
+        }
+        this.bodyCellFactory.set(factory);
+    }
+    
+    
+    /**
+     * Creates a body cell for a {@link DayCell}. This should only be called from a day cell.
+     * @param dayCell   The day cell the body cell is for.
+     * @return The body cell, <code>null</code> if a body cell is not used (it should be used!)
+     */
+    public Cell<T> createBodyCell(DayCell<T> dayCell) {
+        Callback<ContentsCellFactoryInfo<T>, Cell<T>> factory = getBodyCellFactory();
+        if (factory != null) {
+            return factory.call(new ContentsCellFactoryInfo<>(this, dayCell));
+        }
+        
+        ListConverter<T, String> converter = getStringListConverter();
+        if (converter != null) {
+            // A list based converter...
+            return new ListViewCell<>(converter);
+        }
+        
+        return null;
+    }
+    
+    
     /**
      * Defines an optional converter for converting the objects of type T into a list of strings.
      */
-    private ObjectProperty<StringListConverter<T>> stringListConverter;
+    private ObjectProperty<ListConverter<T, String>> stringListConverter;
     
-    public final ObjectProperty<StringListConverter<T>> stringListConverterProperty() {
+    public final ObjectProperty<ListConverter<T, String>> stringListConverterProperty() {
         return stringListConverter;
     }
-    public final StringListConverter<T> getStringListConverter() {
+    public final ListConverter<T, String> getStringListConverter() {
         return (this.stringListConverter == null) ? null : this.stringListConverter.get();
     }
-    public final void setStringListConverter(StringListConverter<T> converter) {
+    public final void setStringListConverter(ListConverter<T, String> converter) {
         if (this.stringListConverter == null) {
             this.stringListConverter = new SimpleObjectProperty<>(this, "stringListConverter");
         }
@@ -139,9 +203,6 @@ public abstract class MultiDayView <T> extends Control {
     }
     
     
-    //
-    //--------------------------------------------------------------------------
-    // firstVisibleDate Read-only Property
     /**
      * Defines the first visible date that is visible in the view.
      */
@@ -157,9 +218,6 @@ public abstract class MultiDayView <T> extends Control {
     
     
 
-    //
-    //--------------------------------------------------------------------------
-    // lastVisibleDate Read-only Property
     /**
      * Defines the last visible date that is visible in the view.
      */
@@ -175,9 +233,6 @@ public abstract class MultiDayView <T> extends Control {
     
     
     
-    //
-    //--------------------------------------------------------------------------
-    // activeDate Property
     /**
      * Defines the active date within the view. The active date is normally highlighted,
      * receives the focus, and is always displayed.
@@ -193,7 +248,6 @@ public abstract class MultiDayView <T> extends Control {
     public final void setActiveDate(LocalDate date) {
         activeDate.set(date);
     }
-    
     
     
 }

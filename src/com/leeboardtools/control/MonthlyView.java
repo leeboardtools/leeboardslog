@@ -15,21 +15,13 @@
  */
 package com.leeboardtools.control;
 
-import com.leeboardtools.util.StringListConverter;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import javafx.beans.property.MapProperty;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.SimpleMapProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableMap;
-import javafx.scene.control.Cell;
-import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
-import javafx.util.Callback;
 
 //
 // TODO: We have a DayCell, which is created by MonthlyViewSkin.

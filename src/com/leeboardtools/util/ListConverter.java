@@ -18,15 +18,19 @@ package com.leeboardtools.util;
 import javafx.collections.ObservableList;
 
 /**
- * A converter that defines conversion behavior between an object and a {@link ObservableList} of strings.
+ * A converter that defines conversion behavior between an object of type T and 
+ * a {@link ObservableList} of objects of type S.
  * @author Albert Santos
- * @param <T>   The type of the object converted to/from a list of strings.
+ * @param <T>   The type of the object converted to/from a list.
+ * @param <S>   The type of the object in the list.
  */
-public interface StringListConverter <T> {
+public interface ListConverter <T, S> {
     /**
      * Converts an object to a list of strings.
      * @param object    The object to convert.
-     * @return The list of strings.
+     * @return The list of objects.
      */
-    public ObservableList<String> toStringList(T object);
+    public ObservableList<S> toList(T object);
+    
+    // TODO: Add fromList conversion.
 }
