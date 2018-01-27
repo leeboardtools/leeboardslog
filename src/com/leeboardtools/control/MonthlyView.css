@@ -1,0 +1,31 @@
+.monthly-view-control {
+    -fx-font-size: 10;
+}
+
+.monthly-view-control * .day-cell:today {
+    -fx-font-weight: bolder;
+}
+
+.monthly-view-control * .day-cell:selected {
+    -fx-background-color: -fx-selection-bar, -fx-cell-focus-inner-border;
+}
+
+.monthly-view-control * .day-of-month {
+    -fx-font-size: 12;
+    -fx-padding: 2 4 2 4;
+}
+
+.monthly-view-control * .previous-month .day-of-month,
+.monthly-view-control * .next-month .day-of-month
+{
+    -fx-font-style: italic;
+    -fx-font-weight: lighter;
+}
+
+.monthly-view-control * .previous-month,
+.monthly-view-control * .next-month
+{
+    -fx-background-color: derive(-fx-control-inner-background, -8%);
+}
+
+

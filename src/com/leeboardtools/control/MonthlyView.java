@@ -46,6 +46,10 @@ public class MonthlyView <T> extends MultiDayView<T> {
     private final int dayOfWeekColumnIndices[] = new int [7];
     private final DayOfWeek columnDayOfWeeks[] = new DayOfWeek [7];
 
+    @Override
+    public String getUserAgentStylesheet() {
+        return MonthlyView.class.getResource("MonthlyView.css").toExternalForm();
+    }
 
     //
     //--------------------------------------------------------------------------

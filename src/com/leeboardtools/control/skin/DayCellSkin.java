@@ -16,10 +16,9 @@
 package com.leeboardtools.control.skin;
 
 import com.leeboardtools.control.DayCell;
-import com.leeboardtools.util.FxUtil;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
-import javafx.scene.layout.Background;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -54,8 +53,6 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
         this.dayLabel = new Label(dayCell.getDayOfMonthText());
         this.dayLabel.getStyleClass().add("day-of-month");
         
-        this.dayLabel.setFont(FxUtil.changeFontSize(this.dayLabel.getFont(), 12));
-        
         dayCell.dayOfMonthTextProperty().addListener((skinnable, oldValue, newValue) -> {
             this.dayLabel.setText(newValue);
         });
@@ -72,6 +69,7 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
         }
        
         getChildren().add(vBox);
+        
     }
     
 }

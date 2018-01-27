@@ -28,13 +28,9 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableMap;
-import javafx.geometry.Insets;
+import javafx.css.PseudoClass;
 import javafx.scene.control.Cell;
 import javafx.scene.control.Skin;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.paint.Color;
 
 /**
  * Cell used to represent the contents of a day within a {@link MultiDayView} derived control.
@@ -46,8 +42,8 @@ public class DayCell <T> extends Cell<LocalDate> {
     
     public static final String STYLE_CLASS_PREVIOUS_MONTH = "previous-month";
     public static final String STYLE_CLASS_NEXT_MONTH = "next-month";
-    public static final String STYLE_CLASS_SELECTED = "selected";
-    public static final String STYLE_CLASS_TODAY = "today";
+    public static final String STYLE_CLASS_HEADER = "header";
+    public static final String STYLE_CLASS_BODY = "body";
     
     protected final MultiDayView<T> control;
     
@@ -124,7 +120,14 @@ public class DayCell <T> extends Cell<LocalDate> {
     /**
      * Returns whether the cell represents 'today'.
      */
-    private final BooleanProperty isToday = new SimpleBooleanProperty(this, "isToday", false);
+    private static final PseudoClass PSEUDO_CLASS_TODAY = PseudoClass.getPseudoClass("today");
+    private final BooleanProperty isToday = new SimpleBooleanProperty(this, "isToday", false) {
+        @Override
+        protected void invalidated() {
+            pseudoClassStateChanged(PSEUDO_CLASS_TODAY, get());
+        }
+        
+    };
     
     public final boolean isToday() {
         return isToday.get();
@@ -137,46 +140,6 @@ public class DayCell <T> extends Cell<LocalDate> {
     }
     
     
-    private final ObjectProperty<Background> previousMonthBackground = new SimpleObjectProperty<>(this, "previousMonthBackground",
-        new Background(new BackgroundFill(Color.GAINSBORO, CornerRadii.EMPTY, Insets.EMPTY)));
-
-    public final Background getPreviousMonthBackground() {
-        return previousMonthBackground.get();
-    }
-    public final void setPreviousMonthBackground(Background value) {
-        previousMonthBackground.set(value);
-    }
-    public final ObjectProperty<Background> previousMonthBackgroundProperty() {
-        return previousMonthBackground;
-    }
-    
-    
-    private final ObjectProperty<Background> currentMonthBackground = new SimpleObjectProperty<>(this, "currentMonthBackground",
-        null);
-
-    public final Background getCurrentMonthBackground() {
-        return currentMonthBackground.get();
-    }
-    public final void setCurrentMonthBackground(Background value) {
-        currentMonthBackground.set(value);
-    }
-    public final ObjectProperty<Background> currentMonthBackgroundProperty() {
-        return currentMonthBackground;
-    }
-    
-    
-    private final ObjectProperty<Background> nextMonthBackground = new SimpleObjectProperty<>(this, "nextMonthBackground",
-        new Background(new BackgroundFill(Color.GAINSBORO, CornerRadii.EMPTY, Insets.EMPTY)));
-
-    public final Background getNextMonthBackground() {
-        return nextMonthBackground.get();
-    }
-    public final void setNextMonthBackground(Background value) {
-        nextMonthBackground.set(value);
-    }
-    public final ObjectProperty<Background> nextMonthBackgroundProperty() {
-        return nextMonthBackground;
-    }
     
     
     /**
@@ -194,7 +157,14 @@ public class DayCell <T> extends Cell<LocalDate> {
      */
     public void setupInnerCells() {
         this.headerCell = control.createHeaderCell(this);
+        if (this.headerCell != null) {
+            this.headerCell.getStyleClass().add(STYLE_CLASS_HEADER);
+        }
+        
         this.bodyCell = control.createBodyCell(this);
+        if (this.bodyCell != null) {
+            this.bodyCell.getStyleClass().add(STYLE_CLASS_BODY);
+        }
     }
 
     
@@ -205,27 +175,15 @@ public class DayCell <T> extends Cell<LocalDate> {
         switch (activeMonthRelation.get()) {
             case BEFORE :
                 getStyleClass().add(STYLE_CLASS_PREVIOUS_MONTH);
-                setBackground(getPreviousMonthBackground());
                 break;
 
             case SAME :
-                setBackground(getCurrentMonthBackground());
                 break;
 
             case AFTER :
                 getStyleClass().add(STYLE_CLASS_NEXT_MONTH);
-                setBackground(getNextMonthBackground());
                 break;
         }
-        
-        if (isSelected()) {
-            getStyleClass().add(STYLE_CLASS_SELECTED);
-        }
-        
-        if (isToday()) {
-            getStyleClass().add(STYLE_CLASS_TODAY);
-        }
-
         
         T item = null;
         if ((date == null) || empty) {

@@ -85,6 +85,8 @@ public class MonthlyController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         
+        //
+        // Month Spinner...
         LocalDateSpinnerValueFactory.ByMonth monthValueFactory = new LocalDateSpinnerValueFactory.ByMonth();
         this.month.setValueFactory(monthValueFactory);
         monthValueFactory.valueProperty().addListener((observable, oldValue, newValue)-> {
@@ -101,6 +103,9 @@ public class MonthlyController implements Initializable {
             monthValueFactory.setValue(newValue);
         });
         
+        
+        //
+        // Year Spinner...
         LocalDateSpinnerValueFactory.ByYear yearValueFactory = new LocalDateSpinnerValueFactory.ByYear();
         this.year.setValueFactory(yearValueFactory);
         yearValueFactory.valueProperty().addListener((observable, oldValue, newValue)-> {
@@ -110,6 +115,9 @@ public class MonthlyController implements Initializable {
             yearValueFactory.setValue(newValue);
         });
         
+        
+        //
+        // Month View Control...
         this.monthlyViewControl = new MonthlyView<>();
         this.mainPane.setCenter(this.monthlyViewControl);
         
@@ -121,8 +129,11 @@ public class MonthlyController implements Initializable {
         this.activeDate.addListener((observable, oldValue, newValue)-> {
             this.monthlyViewControl.setActiveDate(newValue);
         });
+        this.monthlyViewControl.setActiveDate(getActiveDate());
         
         
+        //
+        // Log Book Editor...
         this.logBookEditor = LeeboardsLog.getLogBookEditor();
         if (this.logBookEditor != null) {
             this.logBookEditor.logBookFileProperty().addListener(((observable, oldValue, newValue) -> {
@@ -132,6 +143,9 @@ public class MonthlyController implements Initializable {
                 this.monthlyViewControl.setItems(this.logBookEditor.getLogBookFile().getLogBook().getEntriesByDate());
             }
         }
+        
+        
+        this.monthlyViewControl.requestFocus();
     }
     
     

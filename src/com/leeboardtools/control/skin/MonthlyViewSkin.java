@@ -22,11 +22,14 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
 import java.util.Locale;
+import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -106,6 +109,26 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
             updateDatesDisplayed();
         });
         
+        control.setOnKeyTyped((KeyEvent event) -> {
+            switch (event.getCode()) {
+                case RIGHT :
+                    control.setActiveDate(control.getActiveDate().plusDays(1));
+                    break;
+                case LEFT :
+                    control.setActiveDate(control.getActiveDate().minusDays(1));
+                    break;
+                case UP :
+                    control.setActiveDate(control.getActiveDate().minusDays(7));
+                    break;
+                case DOWN :
+                    control.setActiveDate(control.getActiveDate().plusDays(7));
+                    break;
+                default :
+                    return;
+            }
+            event.consume();            
+        });
+        
         updateDatesDisplayed();
     }
     
@@ -150,9 +173,6 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
                 // Using setAll() because we want to clear all the styles...
                 dayCell.getStyleClass().setAll("day-cell", "cell");
                 
-                dayCell.setIsToday(today.equals(date));
-                dayCell.updateSelected(date.equals(activeDate));
-                
                 YearMonth yearMonth = YearMonth.from(date);
                 if (yearMonth.isBefore(activeYearMonth)) {
                     dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.BEFORE);
@@ -165,6 +185,12 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
                 }
                 
                 dayCells[cellIndex].updateItem(date, false);
+                
+                dayCell.setIsToday(today.equals(date));
+                
+                // updateSelected() has to be called after updateItem() because it doesn't
+                // do anything if the cell is empty (the initial state).
+                dayCell.updateSelected(date.equals(activeDate));
                 
                 ++cellIndex;
                 date = date.plusDays(1);
