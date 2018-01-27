@@ -57,6 +57,7 @@ public class LeeboardsLog extends Application {
         Parent root = FXMLLoader.load(MonthlyController.class.getResource("Monthly.fxml"));
         
         Scene scene = new Scene(root);
+        scene.getStylesheets().add("leeboardslog/Styles.css");
         
         stage.setScene(scene);
         stage.setTitle(logBookEditor.getLogBookFile().getFile().getName());

@@ -177,9 +177,10 @@ public abstract class MultiDayView <T> extends Control {
         ListConverter<T, String> converter = getStringListConverter();
         if (converter != null) {
             // A list based converter...
-            return new ListViewCell<>(converter);
+            return new ItemListCell<>(converter);
         }
         
+        // TODO Should we return a Cell???
         return null;
     }
     

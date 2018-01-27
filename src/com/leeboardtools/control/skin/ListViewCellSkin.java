@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.leeboardtools.control;
+package com.leeboardtools.control.skin;
 
+import com.leeboardtools.control.ListViewCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SkinBase;
 

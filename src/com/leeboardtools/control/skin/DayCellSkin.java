@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.leeboardtools.control;
+package com.leeboardtools.control.skin;
 
+import com.leeboardtools.control.DayCell;
+import com.leeboardtools.util.FxUtil;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -46,25 +49,28 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
         VBox vBox = new VBox();
         vBox.setFillWidth(true);
         
-        DayCell<T> control = getSkinnable();
+        DayCell<T> dayCell = getSkinnable();
         HBox hBoxHeader = new HBox();
-        this.dayLabel = new Label(control.getDayOfMonthText());
+        this.dayLabel = new Label(dayCell.getDayOfMonthText());
         this.dayLabel.getStyleClass().add("day-of-month");
-        control.dayOfMonthTextProperty().addListener((skinnable, oldValue, newValue) -> {
+        
+        this.dayLabel.setFont(FxUtil.changeFontSize(this.dayLabel.getFont(), 12));
+        
+        dayCell.dayOfMonthTextProperty().addListener((skinnable, oldValue, newValue) -> {
             this.dayLabel.setText(newValue);
         });
         hBoxHeader.getChildren().add(this.dayLabel);
         
-        if (control.getHeaderCell() != null) {
-            hBoxHeader.getChildren().add(control.getHeaderCell());
+        if (dayCell.getHeaderCell() != null) {
+            hBoxHeader.getChildren().add(dayCell.getHeaderCell());
         }
 
         vBox.getChildren().add(hBoxHeader);
 
-        if (control.getBodyCell() != null) {
-            vBox.getChildren().add(control.getBodyCell());
+        if (dayCell.getBodyCell() != null) {
+            vBox.getChildren().add(dayCell.getBodyCell());
         }
-        
+       
         getChildren().add(vBox);
     }
     

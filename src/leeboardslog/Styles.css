@@ -1,0 +1,16 @@
+
+.monthly-view-control > * >.previous-month,
+.monthly-view-control > * >.next-month {
+    /*-fx-background: -fx-selection-bar;*/
+    -fx-font-style: italic;
+    /*-fx-background-color: blue;*/
+}
+
+.monthly-view-control {
+    -fx-font-size: 10;
+}
+/*
+.day-of-month {
+    -fx-font-size: 10;
+}
+*/

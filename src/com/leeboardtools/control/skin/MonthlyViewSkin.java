@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.leeboardtools.control;
+package com.leeboardtools.control.skin;
 
+import com.leeboardtools.control.DayCell;
+import com.leeboardtools.control.MonthlyView;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -99,6 +101,10 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
         control.firstVisibleDateProperty().addListener((e) -> {
             updateDatesDisplayed();
         });
+
+        control.activeDateProperty().addListener((e) -> {
+            updateDatesDisplayed();
+        });
         
         updateDatesDisplayed();
     }
@@ -143,19 +149,19 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
                 
                 // Using setAll() because we want to clear all the styles...
                 dayCell.getStyleClass().setAll("day-cell", "cell");
-                if (today.equals(date)) {
-                    dayCell.getStyleClass().add("today");
-                }
-                if (today.equals(activeDate)) {
-                    dayCell.getStyleClass().add("active");
-                }
+                
+                dayCell.setIsToday(today.equals(date));
+                dayCell.updateSelected(date.equals(activeDate));
                 
                 YearMonth yearMonth = YearMonth.from(date);
                 if (yearMonth.isBefore(activeYearMonth)) {
-                    dayCell.getStyleClass().add("previous-month");
+                    dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.BEFORE);
                 }
                 else if (yearMonth.isAfter(activeYearMonth)) {
-                    dayCell.getStyleClass().add("next-month");
+                    dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.AFTER);
+                }
+                else {
+                    dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.SAME);
                 }
                 
                 dayCells[cellIndex].updateItem(date, false);

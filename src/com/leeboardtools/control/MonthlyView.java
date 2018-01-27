@@ -15,6 +15,7 @@
  */
 package com.leeboardtools.control;
 
+import com.leeboardtools.control.skin.MonthlyViewSkin;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -23,23 +24,11 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableMap;
 import javafx.scene.control.Skin;
 
-//
-// TODO: We have a DayCell, which is created by MonthlyViewSkin.
-// DayCell creates a DayCellSkin.
-// DayCell has a header row, with the date number and a header item.
-// Question is how to handle the value portion. Should we have a DayValueCell,
-// along with a DayValueCellSkin? 
-// Or just stick in a Cell<?>...
-// Look into StringConverter for the cells. Except Fx Cells use StringConverter to
-// convert from edited text to the object value.
-//
-// What is the LogBook scenario?
-// items: ObservableMap<LocalDate, DayLogEntry>
-// Need to be able to convert DayLogEntry into a collection
-// of strings.
 
 /**
- *
+ * View that displays {@link LocalDate} based data in a monthly calendar style.
+ * <p>
+ * 
  * @author Albert Santos
  * @param <T> Used to represent the type of the objects stored in the view's {@link ObservableMap},
  */
@@ -77,11 +66,6 @@ public class MonthlyView <T> extends MultiDayView<T> {
     }
     
 
-    // TODO Add DefaultSkin, implements SkinBase<MonthlyView>
-    // This is what sets up the grid, that way we can overload the grid.
-
-    // selectedDate
-    
     // TODO DayOfWeekCell - use DayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault());
     // TODO DateCell - VBox containing a Label and a ListView..
     

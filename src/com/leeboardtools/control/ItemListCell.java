@@ -15,27 +15,28 @@
  */
 package com.leeboardtools.control;
 
+import com.leeboardtools.control.skin.ItemListCellSkin;
 import com.leeboardtools.control.skin.ListViewCellSkin;
+import com.leeboardtools.util.ListConverter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Cell;
 import javafx.scene.control.Skin;
-import com.leeboardtools.util.ListConverter;
 
 /**
- * This is a cell that has a {@link javafx.scene.control.ListView} inside the cell.
- * It uses a {@link ListConverter} to generate the list of items for the
- * ListView from the cell's item.
+ * A cell that whose item is a list of items.
+ * It uses a {@link ListConverter} to generate the list of individual items from
+ * the cell's item.
  * @author Albert Santos
  * @param <T>   The type of the item of the object.
  * @param <S>   The type of the elements contained within the cell's ListView.
- * 
+ * @author Albert Santos
  */
-public class ListViewCell<T, S> extends Cell<T> {
+public class ItemListCell <T, S> extends Cell<T> {
     private final ListConverter<T, S> listConverter;
     
     /**
-     * The item list displayed by the cell's ListView.
+     * The item list displayed by the cell.
      */
     private final ObservableList<S> items = FXCollections.observableArrayList();
     
@@ -48,7 +49,7 @@ public class ListViewCell<T, S> extends Cell<T> {
      * Constructor.
      * @param listConverter The converter to use.
      */
-    public ListViewCell(ListConverter<T, S> listConverter) {
+    public ItemListCell(ListConverter<T, S> listConverter) {
         this.listConverter = listConverter;
         this.itemProperty().addListener((property, oldValue, newValue) -> {
             updateItem(newValue, (newValue == null));
@@ -77,7 +78,7 @@ public class ListViewCell<T, S> extends Cell<T> {
 
     @Override
     protected Skin<?> createDefaultSkin() {
-        return new ListViewCellSkin<>(this);
+        return new ItemListCellSkin<>(this);
     }
     
 }

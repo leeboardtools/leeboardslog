@@ -17,6 +17,9 @@ package com.leeboardtools.util;
 
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 
 /**
  * Miscellaneous JavaFX utility methods.
@@ -48,5 +51,45 @@ public class FxUtil {
         }
         
         return null;
+    }
+    
+    
+    /**
+     * Changes the size of a font.
+     * @param font  The font, if <code>null</code> the default font will be used..
+     * @param size  The new size.
+     * @return A font with the requested size.
+     */
+    public static Font changeFontSize(Font font, double size) {
+        if (font == null) {
+            font = Font.getDefault();
+        }
+        return (size == font.getSize()) ? font : new Font(font.getName(), size);
+    }
+    
+    /**
+     * Changes the posture of a font.
+     * @param font  The font, if <code>null</code> the default font will be used..
+     * @param posture   The desired posture.
+     * @return A font with the desired posture (or at least what's available).
+     */
+    public static Font changeFontWeight(Font font, FontPosture posture) {
+        if (font == null) {
+            font = Font.getDefault();
+        }
+        return Font.font(font.getFamily(), posture, font.getSize());
+    }
+    
+    /**
+     * Changes the weight of a font.
+     * @param font  The font, if <code>null</code> the default font will be used..
+     * @param weight    The desired weight.
+     * @return A font with the desired weight (or at least what's available).
+     */
+    public static Font changeFontWeight(Font font, FontWeight weight) {
+        if (font == null) {
+            font = Font.getDefault();
+        }
+        return Font.font(font.getFamily(), weight, font.getSize());
     }
 }

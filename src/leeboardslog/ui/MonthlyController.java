@@ -88,6 +88,13 @@ public class MonthlyController implements Initializable {
         LocalDateSpinnerValueFactory.ByMonth monthValueFactory = new LocalDateSpinnerValueFactory.ByMonth();
         this.month.setValueFactory(monthValueFactory);
         monthValueFactory.valueProperty().addListener((observable, oldValue, newValue)-> {
+            LocalDate currentActiveDate = this.activeDate.get();
+            if ((newValue.getMonth() != currentActiveDate.getMonth()) || (newValue.getYear() != currentActiveDate.getYear())) {
+                // We want to line up the entire month, we'll do that by making sure
+                // the first of the month is at the first row.
+                LocalDate startOfMonth = newValue.minusDays(newValue.getDayOfMonth() - 1);
+                this.monthlyViewControl.makeDateInFirstRow(startOfMonth);
+            }
             this.activeDate.set(newValue);
         });
         this.activeDate.addListener((observable, oldValue, newValue)-> {
