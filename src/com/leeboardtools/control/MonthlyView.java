@@ -126,7 +126,7 @@ public class MonthlyView <T> extends MultiDayView<T> {
             else if (date.isAfter(this.lastVisibleDate.get())) {
                 // Same for the last visible date.
                 if (date.isBefore(this.lastVisibleDate.get().plusDays(8))) {
-                    makeDateInFirstRow(date.minusDays(NUMBER_DAYS_VISIBLE));
+                    makeDateInFirstRow(date.minusDays(NUMBER_DAYS_VISIBLE - 7));
                     return;
                 }
             }

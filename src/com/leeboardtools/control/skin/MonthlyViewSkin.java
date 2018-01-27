@@ -54,6 +54,49 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
     private final static int NUMBER_DAY_CELL_ROWS = MonthlyView.NUMBER_DAY_CELL_ROWS;
     private final DayCell<T> dayCells [] = new DayCell [NUMBER_DAY_CELL_ROWS * 7];
     
+    private final EventHandler<KeyEvent> keyTypedEventHandler = (KeyEvent event) -> {
+        MonthlyView monthlyView = getSkinnable();
+        LocalDate firstVisibleDate;
+        int deltaDays;
+        switch (event.getCode()) {
+            case RIGHT :
+                monthlyView.setActiveDate(monthlyView.getActiveDate().plusDays(1));
+                break;
+            case LEFT :
+                monthlyView.setActiveDate(monthlyView.getActiveDate().minusDays(1));
+                break;
+            case UP :
+                monthlyView.setActiveDate(monthlyView.getActiveDate().minusDays(7));
+                break;
+            case DOWN :
+                monthlyView.setActiveDate(monthlyView.getActiveDate().plusDays(7));
+                break;
+                
+            case PAGE_UP :
+                firstVisibleDate = monthlyView.getFirstVisibleDate();
+                deltaDays = 7 * NUMBER_DAY_CELL_ROWS;
+                monthlyView.setActiveDate(monthlyView.getActiveDate().minusDays(deltaDays));
+                monthlyView.makeDateInFirstRow(firstVisibleDate.minusDays(deltaDays));
+                break;
+                
+            case PAGE_DOWN :
+                firstVisibleDate = monthlyView.getFirstVisibleDate();
+                deltaDays = 7 * NUMBER_DAY_CELL_ROWS;
+                monthlyView.setActiveDate(monthlyView.getActiveDate().plusDays(7 * NUMBER_DAY_CELL_ROWS));
+                monthlyView.makeDateInFirstRow(firstVisibleDate.plusDays(deltaDays));
+                break;
+            default :
+                return;
+        }
+        event.consume();            
+    };
+    
+    private final EventHandler<MouseEvent> mousePressedEventHandler = (MouseEvent event) -> {
+        if (getSkinnable().isFocusTraversable()) {
+            getSkinnable().requestFocus();
+        }
+    };
+    
     public MonthlyViewSkin(final MonthlyView control) {
         super(control);
         
@@ -109,25 +152,8 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
             updateDatesDisplayed();
         });
         
-        control.setOnKeyTyped((KeyEvent event) -> {
-            switch (event.getCode()) {
-                case RIGHT :
-                    control.setActiveDate(control.getActiveDate().plusDays(1));
-                    break;
-                case LEFT :
-                    control.setActiveDate(control.getActiveDate().minusDays(1));
-                    break;
-                case UP :
-                    control.setActiveDate(control.getActiveDate().minusDays(7));
-                    break;
-                case DOWN :
-                    control.setActiveDate(control.getActiveDate().plusDays(7));
-                    break;
-                default :
-                    return;
-            }
-            event.consume();            
-        });
+        control.addEventFilter(KeyEvent.KEY_PRESSED, keyTypedEventHandler);
+        control.addEventFilter(MouseEvent.MOUSE_PRESSED, mousePressedEventHandler);
         
         updateDatesDisplayed();
     }

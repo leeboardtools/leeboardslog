@@ -16,8 +16,14 @@
 package com.leeboardtools.control.skin;
 
 import com.leeboardtools.control.DayCell;
+import java.time.LocalDate;
+import java.time.format.TextStyle;
+import java.util.Locale;
+import javafx.collections.ObservableMap;
+import javafx.css.PseudoClass;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -42,6 +48,22 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
     public DayCellSkin(DayCell<T> control) {
         super(control);
         setupSkin();
+        
+        control.itemProperty().addListener((property, oldValue, newValue) -> {
+            updateSkin();
+        });
+        
+        control.setOnMousePressed((event) -> {
+            if (!control.contains(event.getX(), event.getY())) {
+                return;
+            }
+            if (event.getButton() == MouseButton.PRIMARY) {
+                control.getMultiDayView().setActiveDate(control.getItem());
+                event.consume();
+            }
+        });
+        
+        updateSkin();
     }
     
     private void setupSkin() {
@@ -72,4 +94,23 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
         
     }
     
+    protected void updateSkin() {
+        LocalDate date = getSkinnable().getItem();
+        if (date == null) {
+            this.dayLabel.setText("");
+            return;
+        }
+        
+        if (date.getDayOfMonth() == 1) {
+            String text = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.getDefault()) + " " + date.getDayOfMonth();
+            this.dayLabel.setText(text);
+
+            this.dayLabel.pseudoClassStateChanged(DayCell.PSEUDO_CLASS_FIRST_OF_MONTH, true);
+        }
+        else {
+            this.dayLabel.setText(Integer.toString(date.getDayOfMonth()));
+
+            this.dayLabel.pseudoClassStateChanged(DayCell.PSEUDO_CLASS_FIRST_OF_MONTH, false);
+        }
+    }
 }

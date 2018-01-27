@@ -17,8 +17,6 @@ package com.leeboardtools.control;
 
 import com.leeboardtools.control.skin.DayCellSkin;
 import java.time.LocalDate;
-import java.time.format.TextStyle;
-import java.util.Locale;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -45,7 +43,18 @@ public class DayCell <T> extends Cell<LocalDate> {
     public static final String STYLE_CLASS_HEADER = "header";
     public static final String STYLE_CLASS_BODY = "body";
     
+    public static final PseudoClass PSEUDO_CLASS_TODAY = PseudoClass.getPseudoClass("today");
+    public static final PseudoClass PSEUDO_CLASS_FIRST_OF_MONTH = PseudoClass.getPseudoClass("first-of-month");
+    public static final PseudoClass PSEUDO_CLASS_ODD_MONTH = PseudoClass.getPseudoClass("odd-month");
+    
     protected final MultiDayView<T> control;
+    
+    /**
+     * @return The {@link MultiDayView} to which this belongs.
+     */
+    public final MultiDayView<T> getMultiDayView() {
+        return control;
+    }
     
     protected Cell<T> headerCell;
     
@@ -120,7 +129,6 @@ public class DayCell <T> extends Cell<LocalDate> {
     /**
      * Returns whether the cell represents 'today'.
      */
-    private static final PseudoClass PSEUDO_CLASS_TODAY = PseudoClass.getPseudoClass("today");
     private final BooleanProperty isToday = new SimpleBooleanProperty(this, "isToday", false) {
         @Override
         protected void invalidated() {
@@ -138,7 +146,6 @@ public class DayCell <T> extends Cell<LocalDate> {
     public final BooleanProperty isTodayProperty() {
         return isToday;
     }
-    
     
     
     
@@ -193,16 +200,11 @@ public class DayCell <T> extends Cell<LocalDate> {
             this.dayOfMonthText.set("");
         }
         else {
-            if (date.getDayOfMonth() == 1) {
-                String text = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.getDefault()) + " " + date.getDayOfMonth();
-                this.dayOfMonthText.set(text);
-            }
-            else {
-                this.dayOfMonthText.set(Integer.toString(date.getDayOfMonth()));
-            }
-
             ObservableMap<LocalDate, T> items = this.control.getItems();
             item = (items != null) ? items.get(date) : null;
+            
+            boolean isOddMonth = (date.getMonthValue() & 0x01) != 0;
+            pseudoClassStateChanged(PSEUDO_CLASS_ODD_MONTH, isOddMonth);
         }
         
         this.itemData.set(item);
