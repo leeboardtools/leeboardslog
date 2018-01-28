@@ -16,7 +16,6 @@
 package com.leeboardtools.control;
 
 import com.leeboardtools.control.skin.ItemListCellSkin;
-import com.leeboardtools.control.skin.ListViewCellSkin;
 import com.leeboardtools.util.ListConverter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -29,7 +28,7 @@ import javafx.scene.control.Skin;
  * the cell's item.
  * @author Albert Santos
  * @param <T>   The type of the item of the object.
- * @param <S>   The type of the elements contained within the cell's ListView.
+ * @param <S>   The type of the elements contained within the cell's list of items.
  * @author Albert Santos
  */
 public class ItemListCell <T, S> extends Cell<T> {
@@ -80,5 +79,5 @@ public class ItemListCell <T, S> extends Cell<T> {
     protected Skin<?> createDefaultSkin() {
         return new ItemListCellSkin<>(this);
     }
-    
+
 }

@@ -21,12 +21,14 @@ import java.time.format.TextStyle;
 import java.util.Locale;
 import javafx.collections.ObservableMap;
 import javafx.css.PseudoClass;
+import javafx.scene.control.Cell;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 /**
@@ -53,13 +55,14 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
             updateSkin();
         });
         
-        control.setOnMousePressed((event) -> {
+        control.addEventFilter(MouseEvent.MOUSE_PRESSED, (event) -> {
+        //control.setOnMousePressed((event) -> {
             if (!control.contains(event.getX(), event.getY())) {
                 return;
             }
             if (event.getButton() == MouseButton.PRIMARY) {
                 control.getMultiDayView().setActiveDate(control.getItem());
-                event.consume();
+                //event.consume();
             }
         });
         
@@ -86,8 +89,10 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
 
         vBox.getChildren().add(hBoxHeader);
 
-        if (dayCell.getBodyCell() != null) {
-            vBox.getChildren().add(dayCell.getBodyCell());
+        Cell<T> bodyCell = dayCell.getBodyCell();
+        if (bodyCell != null) {
+            vBox.getChildren().add(bodyCell);
+            VBox.setVgrow(bodyCell, Priority.ALWAYS);
         }
        
         getChildren().add(vBox);
