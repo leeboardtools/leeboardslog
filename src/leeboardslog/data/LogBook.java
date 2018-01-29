@@ -313,6 +313,17 @@ public class LogBook {
     
     
     /**
+     * Retrieves the {@link LogEntry} with a given id.
+     * @param guid  The id of interest.
+     * @return The {@link LogEntry}, <code>null</code> if none with the id.
+     */
+    public final LogEntry getLogEntryWithGuid(String guid) {
+        EntryMaster entryMaster = this.masterLogEntries.get(guid);
+        return (entryMaster == null) ? null : entryMaster.logEntry;
+    }
+    
+    
+    /**
      * Retrieves a modifiable list of the log entries sorted by increasing start time.
      * The list is a new copy and may be modified freely.
      * @return The list of log entries.

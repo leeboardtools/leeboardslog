@@ -30,14 +30,8 @@ import javafx.scene.text.TextFlow;
  */
 public class ItemListCellSkin <T, S> extends SkinBase<ItemListCell<T, S>> {
     private final Rectangle clipRect = new Rectangle();
-    private final TextFlow container = new TextFlow() {
-        @Override
-        protected double computePrefHeight(double width) {
-            double result = super.computePrefHeight(width); //To change body of generated methods, choose Tools | Templates.
-            return result;
-        }
-        
-    };
+    private final TextFlow container = new TextFlow();
+
     
     public ItemListCellSkin(ItemListCell<T, S> control) {
         super(control);

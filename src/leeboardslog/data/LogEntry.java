@@ -31,6 +31,8 @@ import java.util.UUID;
 import javafx.beans.Observable;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyProperty;
+import javafx.beans.property.ReadOnlySetProperty;
+import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleSetProperty;
@@ -153,10 +155,10 @@ public class LogEntry {
     /**
      * Defines the set of tags associated with the log entry.
      */
-    private final SetProperty<String> tags = new SimpleSetProperty<>(this, TAGS_PROP, FXCollections.observableSet(new HashSet<>()));
+    private final ReadOnlySetWrapper<String> tags = new ReadOnlySetWrapper<>(this, TAGS_PROP, FXCollections.observableSet(new HashSet<>()));
     
-    public final SetProperty<String> tagsProperty() {
-        return tags;
+    public final ReadOnlySetProperty<String> tagsProperty() {
+        return tags.getReadOnlyProperty();
     }
     public final ObservableSet<String> getTags() {
         return tags.get();
@@ -282,6 +284,27 @@ public class LogEntry {
         JSONObject jsonObject = new JSONObject();
         toJSON(jsonObject);
         return jsonObject;
+    }
+    
+    
+    /**
+     * Copies all but the Guid of another log entry into this one.
+     * @param other The log entry to be copied.
+     */
+    public void copyFrom(LogEntry other) {
+        if (this == other) {
+            return;
+        }
+        
+        setTimePeriod(other.getTimePeriod());
+        setZoneId(other.getZoneId());
+        setTitle(other.getTitle());
+        setLatestAuthor(other.getLatestAuthor());
+        
+        this.tags.get().clear();
+        this.tags.get().addAll(other.getTags());
+        
+        setContentHTMLBodyText(other.getContentHTMLBodyText());
     }
     
     
@@ -456,7 +479,7 @@ public class LogEntry {
         String text = getTitle();
         if ((text == null) || text.isEmpty()) {
             // TODO Get the first line of ContentHTMLBodyText()...
-            text = this.timePeriod.toString();
+            text = this.timePeriod.get().toString();
         }
         return text;
     }

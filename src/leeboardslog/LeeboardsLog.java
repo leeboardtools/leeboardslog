@@ -23,7 +23,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import leeboardslog.ui.LogBookEditor;
-import leeboardslog.ui.MonthlyController;
+import leeboardslog.ui.LogBookViewController;
+import leeboardslog.ui.LogBookWindow;
 
 /**
  *
@@ -54,14 +55,7 @@ public class LeeboardsLog extends Application {
             return;
         }
         
-        Parent root = FXMLLoader.load(MonthlyController.class.getResource("Monthly.fxml"));
-        
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add("leeboardslog/Styles.css");
-        
-        stage.setScene(scene);
-        stage.setTitle(logBookEditor.getLogBookFile().getFile().getName());
-        stage.show();
+        logBookEditor.newLogBookWindow(stage);
     }
 
     /**

@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.time.zone.ZoneRulesException;
@@ -76,7 +77,52 @@ public class TimePeriod implements Comparable <TimePeriod> {
         }
         return true;
     }
+
+    @Override
+    public String toString() {
+        return toString(null);
+    }
     
+    
+    /**
+     * Returns a string representation of the time period relative to a given time zone id.
+     * For zero duration time periods the date/time is returned.
+     * For time periods that start and end at midnight (zone id time):
+     * <ul>
+     *      <li>If the time period is a single day the date is returned</li>
+     *      <li>Otherwise a string in the form (start date) -> (end date - 1).
+     * </ul>
+     * For other time periods the full date/time is returned in the form:
+     * (start date/time) -> (end date/time).
+     * @param zoneId    The zone id of the date-times, if <code>null</code> {@link ZoneId#systemDefault() } is
+     * called to obtain the zone id.
+     * @return The string representation.
+     */
+    public String toString(ZoneId zoneId) {
+        if (zoneId == null) {
+            zoneId = ZoneId.systemDefault();
+        }
+        
+        LocalDateTime startDateTime = LocalDateTime.ofInstant(this.startInstant, zoneId);
+        LocalDateTime endDateTime = LocalDateTime.ofInstant(this.endInstant, zoneId);
+        
+        if (startDateTime.equals(endDateTime)) {
+            return startDateTime.toString();
+        }
+        
+        LocalTime startTime = startDateTime.toLocalTime();
+        LocalTime endTime = endDateTime.toLocalTime();
+        if (LocalTime.MIDNIGHT.equals(startTime) && LocalTime.MIDNIGHT.equals(endTime)) {
+            LocalDate startDate = startDateTime.toLocalDate();
+            LocalDate endDate = endDateTime.toLocalDate().minusDays(1);
+            if (startDate.equals(endDate)) {
+                return startDate.toString();
+            }
+            return startDate.toString() + " -> " + endDate.toString();
+        }
+        
+        return startDateTime.toString() + " -> " + endDateTime.toString();
+    }
     
     
     /**

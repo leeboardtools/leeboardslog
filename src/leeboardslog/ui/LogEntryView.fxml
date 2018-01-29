@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="200.0" minWidth="700.0" prefHeight="400.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="leeboardslog.ui.LogEntryViewController">
+   <top>
+      <VBox BorderPane.alignment="CENTER">
+         <children>
+            <BorderPane>
+               <right>
+                  <Button mnemonicParsing="false" onAction="#onSave" text="Save" BorderPane.alignment="CENTER">
+                     <BorderPane.margin>
+                        <Insets left="2.0" right="2.0" />
+                     </BorderPane.margin>
+                  </Button>
+               </right>
+               <center>
+                  <TextField fx:id="titleEditor" promptText="Title" BorderPane.alignment="CENTER">
+                     <BorderPane.margin>
+                        <Insets left="2.0" right="2.0" />
+                     </BorderPane.margin>
+                  </TextField>
+               </center>
+               <VBox.margin>
+                  <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+               </VBox.margin>
+            </BorderPane>
+            <BorderPane>
+               <center>
+                  <HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+                     <children>
+                        <DatePicker fx:id="startDatePicker" prefWidth="120.0" promptText="12-31-9999">
+                           <HBox.margin>
+                              <Insets left="2.0" />
+                           </HBox.margin>
+                        </DatePicker>
+                        <ComboBox fx:id="startTimePicker" editable="true" prefWidth="110.0" promptText="10:00 am">
+                           <opaqueInsets>
+                              <Insets />
+                           </opaqueInsets>
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin>
+                        </ComboBox>
+                        <Label text=" to " />
+                        <DatePicker fx:id="endDatePicker" prefWidth="120.0" />
+                        <ComboBox fx:id="endTimePicker" editable="true" prefWidth="120.0" promptText="11:00 am" />
+                        <ChoiceBox fx:id="timeZonePicker" prefWidth="150.0">
+                           <HBox.margin>
+                              <Insets left="4.0" right="2.0" />
+                           </HBox.margin>
+                        </ChoiceBox>
+                     </children>
+                  </HBox>
+               </center>
+               <VBox.margin>
+                  <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+               </VBox.margin>
+            </BorderPane>
+            <BorderPane>
+               <left>
+                  <HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+                     <children>
+                        <Label text="Level:">
+                           <HBox.margin>
+                              <Insets left="2.0" right="2.0" />
+                           </HBox.margin>
+                        </Label>
+                        <ComboBox fx:id="levelPicker" prefWidth="100.0">
+                           <HBox.margin>
+                              <Insets left="2.0" right="2.0" />
+                           </HBox.margin>
+                        </ComboBox>
+                     </children>
+                  </HBox>
+               </left>
+               <center>
+                  <HBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+                     <children>
+                        <Label text="Tags:">
+                           <HBox.margin>
+                              <Insets left="2.0" right="2.0" />
+                           </HBox.margin>
+                        </Label>
+                        <TextField fx:id="tagsEditor" HBox.hgrow="ALWAYS">
+                           <HBox.margin>
+                              <Insets left="2.0" right="2.0" />
+                           </HBox.margin>
+                        </TextField>
+                     </children>
+                     <BorderPane.margin>
+                        <Insets left="10.0" />
+                     </BorderPane.margin>
+                  </HBox>
+               </center>
+               <VBox.margin>
+                  <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+               </VBox.margin>
+            </BorderPane>
+         </children>
+      </VBox>
+   </top>
+</BorderPane>

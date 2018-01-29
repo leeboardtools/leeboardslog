@@ -17,8 +17,13 @@ package leeboardslog.ui;
 
 import com.leeboardtools.dialog.PromptDialog;
 import com.leeboardtools.util.ResourceSource;
+import com.leeboardtools.util.TimePeriod;
 import java.io.File;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
@@ -26,8 +31,11 @@ import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.stage.Window;
+import leeboardslog.data.LogBook;
 import leeboardslog.data.LogBookFile;
+import leeboardslog.data.LogEntry;
 
 /**
  * This class serves as a central point for managing the editing of a specific
@@ -54,6 +62,12 @@ public class LogBookEditor {
     String activeAuthor;
     
     final Preferences preferences;
+    
+    
+    // The key is the GUID of the log entry.
+    final Map<String, LogEntryView> logEntryViewsByGuid = new HashMap<>();
+    
+    final List<LogBookWindow> logBookWindows = new ArrayList<>();
 
 
     /**
@@ -68,8 +82,15 @@ public class LogBookEditor {
     public final LogBookFile getLogBookFile() {
         return this.logBookFile.get();
     }
-  
     
+    
+    /**
+     * @return The log book being edited, <code>null</code> if none open.
+     */
+    public final LogBook getLogBook() {
+        return (logBookFile.get() == null) ? null : logBookFile.get().getLogBook();
+    }
+  
     
     public LogBookEditor(Preferences preferences) {
         this.preferences = (preferences == null) ? Preferences.userNodeForPackage(this.getClass()) : preferences;
@@ -247,6 +268,10 @@ public class LogBookEditor {
             return false;
         }
         
+        if (!closeLogBook()) {
+            return false;
+        }
+        
         LogBookFile newLogBookFile = LogBookFile.createLogBookFile(newFile, this.activeAuthor);
         this.logBookFile.set(newLogBookFile);
         this.preferences.put(PREFS_PREVIOUS_FILE_NAME, newFile.getAbsolutePath());
@@ -284,6 +309,10 @@ public class LogBookEditor {
             }
         }
         
+        if (!closeLogBook()) {
+            return false;
+        }
+        
         openLogBook(openFile);
         return true;
     }
@@ -300,4 +329,164 @@ public class LogBookEditor {
     }
     
     
+    protected boolean closeLogBook() {
+        if (this.logBookFile.get() == null) {
+            return true;
+        }
+        
+        // Do any views need to save changes?
+        boolean isChanges = false;
+        LogEntryView [] logEntryViews = getOpenLogEntryViews();
+        for (LogEntryView logEntryView : logEntryViews) {
+            if (logEntryView.isChanges()) {
+                isChanges = true;
+                break;
+            }
+        }
+        
+        boolean isSaveChanges = false;
+        if (isChanges) {
+            // Prompt is 'One or more Log Entries have been modified. Do you want to save the
+            // changes to all, select which ones, discard all the changes, cancel.
+        }
+        
+        // Close all the log entry views.
+        for (LogEntryView logEntryView : logEntryViews) {
+            logEntryView.closeView(isSaveChanges);
+        }
+
+        
+        this.logBookFile.set(null);
+        return true;
+    }
+    
+    
+    
+    
+    
+    /**
+     * @return Retrieves a modifiable array of the open {@link LogEntryView}s.
+     */
+    public LogEntryView [] getOpenLogEntryViews() {
+        return this.logEntryViewsByGuid.values().toArray(new LogEntryView[this.logEntryViewsByGuid.size()]);
+    }
+    
+    /**
+     * Retrieves a {@link LogEntryView} for a {@link LogEntry} with a given id.
+     * @param guid  The id of the log entry of interest.
+     * @return The view, <code>null</code> if there is no {@link LogEntry} with the id in
+     * the log book.
+     */
+    public LogEntryView getLogEntryView(String guid) {
+        LogEntryView view = this.logEntryViewsByGuid.get(guid);
+        if (view == null) {
+            LogEntry logEntry = this.logBookFile.get().getLogBook().getLogEntryWithGuid(guid);
+            if (logEntry == null) {
+                return null;
+            }
+            
+            view = createLogEntryView(logEntry);
+        }
+        
+        return view;
+    }
+    
+    /**
+     * Retrieves a {@link LogEntryView} for a new {@link LogEntry}. The log entry is not
+     * yet added to the log book.
+     * @param timePeriod    The initial time period, if <code>null</code> then the current date will be used.
+     * @return The view.
+     */
+    public LogEntryView getViewForNewLogEntry(TimePeriod timePeriod) {
+        LogEntry logEntry = new LogEntry();
+        
+        if (timePeriod == null) {
+            LogBook logBook = getLogBookFile().getLogBook();
+            LocalDate now = LocalDate.now();
+            timePeriod = TimePeriod.fromEdgeDates(now, now, logBook.getCurrentZoneId());
+        }
+        logEntry.setTimePeriod(timePeriod);
+        
+        LogEntryView view = createLogEntryView(logEntry);
+        
+        return view;
+    }
+    
+    protected LogEntryView createLogEntryView(LogEntry logEntry) {
+        LogEntryView view = new LogEntryView(logEntry, this);
+        this.logEntryViewsByGuid.put(logEntry.getGuid(), view);
+        
+        view.addListener((LogEntryView view1) -> {
+            logEntryViewsByGuid.remove(view1.getLogEntry().getGuid());
+        });
+        
+        return view;
+    }
+
+    
+    /**
+     * Copies a {@link LogEntry} to the {@link LogEntry} in the log book with a given GUID.
+     * @param guid  The GUID of the log entry. If there is no log entry in the log book, a
+     * new log entry with this id is added.
+     * @param workingLogEntry The log entry whose contents are to be copied.
+     */
+    public void updateLogEntry(String guid, LogEntry workingLogEntry) {
+        LogBook logBook = getLogBookFile().getLogBook();
+        LogEntry logEntry = logBook.getLogEntryWithGuid(guid);
+        if (logEntry == null) {
+            logEntry = new LogEntry(guid, null, null);
+            logEntry.copyFrom(workingLogEntry);
+            logBook.addLogEntry(logEntry);
+        }
+        else {
+            logEntry.copyFrom(workingLogEntry);
+        }
+    }
+    
+    
+    /**
+     * Opens a new log book window for this editor.
+     * @return The log book window. The window is displayed and given focus.
+     */
+    public final LogBookWindow newLogBookWindow() {
+        return newLogBookWindow(null);
+    }
+    
+    /**
+     * Opens a new log book window for this editor, with a given {@link Stage} for the window.
+     * @param stage The stage to use, may be <code>null</code>.
+     * @return The log book window. The window is displayed and given focus.
+     */
+    public LogBookWindow newLogBookWindow(Stage stage) {
+        LogBookWindow window = new LogBookWindow(this, stage);
+        this.logBookWindows.add(window);
+        window.showWindow();
+        return window;
+    }
+    
+    /**
+     * Safely attempts to closes a log book window. If it is the last log book window,
+     * the current log book file being edited is closed safely.
+     * @param window    The log book window to attempt to close.
+     * @return <code>true</code> if the window was closed.
+     */
+    public boolean safeCloseLogBookWindow(LogBookWindow window) {
+        // If this is the last log book window open, 
+        int index = this.logBookWindows.indexOf(window);
+        if (index < 0) {
+            LOG.severe("Attempt to remove a LogBookWindow that's not in logBookWindows.");
+            return true;
+        }
+        
+        if (this.logBookWindows.size() == 1) {
+            if (!closeLogBook()) {
+                return false;
+            }
+        }
+        
+        this.logBookWindows.remove(index);
+        window.shutDownWindow();
+        
+        return true;
+    }
 }
