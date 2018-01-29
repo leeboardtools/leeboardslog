@@ -155,6 +155,11 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
         control.addEventFilter(KeyEvent.KEY_PRESSED, keyTypedEventHandler);
         control.addEventFilter(MouseEvent.MOUSE_PRESSED, mousePressedEventHandler);
         
+        control.setOnScroll((event) -> { 
+            scrollActiveDate((int)event.getDeltaX(), 1);
+            scrollActiveDate((int)event.getDeltaY(), 7);
+        });
+        
         updateDatesDisplayed();
     }
     
@@ -222,5 +227,21 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
                 date = date.plusDays(1);
             }
         }
+    }
+    
+    protected void scrollActiveDate(int dir, int multiplier) {
+        int delta;
+        if (dir > 0) {
+            delta = -1;
+        }
+        else if (dir < 0) {
+            delta = 1;
+        }
+        else {
+            return;
+        }
+        
+        MonthlyView view = getSkinnable();
+        view.setActiveDate(view.getActiveDate().plusDays(delta * multiplier));
     }
 }
