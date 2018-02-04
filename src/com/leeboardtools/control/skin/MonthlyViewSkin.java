@@ -251,7 +251,7 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
             }
             dayCells[cellIndex].updateItem(date, false);
 
-            dayCell.setIsToday(today.equals(date));
+            dayCell.setCellIsToday(today.equals(date));
 
             // updateSelected() has to be called after updateItem() because it doesn't
             // do anything if the cell is empty (the initial state).

@@ -129,7 +129,7 @@ public class DayCell <T> extends Cell<LocalDate> {
     /**
      * Returns whether the cell represents 'today'.
      */
-    private final BooleanProperty isToday = new SimpleBooleanProperty(this, "isToday", false) {
+    private final BooleanProperty cellIsToday = new SimpleBooleanProperty(this, "cellIsToday", false) {
         @Override
         protected void invalidated() {
             pseudoClassStateChanged(PSEUDO_CLASS_TODAY, get());
@@ -137,14 +137,14 @@ public class DayCell <T> extends Cell<LocalDate> {
         
     };
     
-    public final boolean isToday() {
-        return isToday.get();
+    public final boolean cellIsToday() {
+        return cellIsToday.get();
     }
-    public final void setIsToday(boolean value) {
-        isToday.set(value);
+    public final void setCellIsToday(boolean value) {
+        cellIsToday.set(value);
     }
-    public final BooleanProperty isTodayProperty() {
-        return isToday;
+    public final BooleanProperty cellIsTodayProperty() {
+        return cellIsToday;
     }
     
     
