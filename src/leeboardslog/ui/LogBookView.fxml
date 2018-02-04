@@ -32,6 +32,8 @@
                           <items>
                             <MenuItem mnemonicParsing="false" onAction="#onNewLogBook" text="New Log Book..." />
                               <MenuItem mnemonicParsing="false" onAction="#onOpenLogBook" text="Open Log Book..." />
+                              <MenuItem mnemonicParsing="false" onAction="#onSave" text="Save" />
+                              <CheckMenuItem fx:id="autoSaveMenuItem" mnemonicParsing="false" onAction="#onAutoSave" text="Auto Save" />
                           </items>
                         </Menu>
                         <Menu mnemonicParsing="false" text="Views">

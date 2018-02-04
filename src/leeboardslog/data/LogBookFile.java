@@ -17,6 +17,7 @@ package leeboardslog.data;
 
 import com.leeboardtools.text.TextUtil;
 import com.leeboardtools.util.ChangeId;
+import com.leeboardtools.util.FileUtil;
 import com.leeboardtools.util.ResourceSource;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -63,6 +64,8 @@ public class LogBookFile {
     
     boolean isLogBookChanged = true;
     Header header;
+    
+    boolean isCreateBackup = true;
     
     Optional<Boolean> optIsCompressFile = Optional.empty();
     
@@ -404,52 +407,63 @@ public class LogBookFile {
         BufferedWriter writer = null;
         String fileName = this.file.getPath();
         try {
-            stream = getOutputStream();
-            writer = new BufferedWriter(new OutputStreamWriter(stream));
-            
-            ++this.header.lastUpdateId;
-            this.header.lastUpdateInstant = Instant.now();
-            this.header.lastUpdateAuthor = this.logBook.getActiveAuthor();
-            
-            writeHeader(this.header, fileName, writer);
-            
-            JSONObject rootJSONObject = new JSONObject();
-            
-            if (this.updatedJSONObject == null) {
-                this.updatedJSONObject = this.logBook.toJSONObject();
+            File backupFile = null;
+            if (this.isCreateBackup) {
+                backupFile = FileUtil.createBackupFileName(this.file, false);
             }
             
-            rootJSONObject.put(CURRENT_LOGBOOK_KEY, this.updatedJSONObject);
-            
-            // TODO: Need to add the diff...
-            // We need a diff list.
-            
-            if (shouldCompressFile()) {
-                writer.write(rootJSONObject.toString());
-            }
-            else {
-                writer.write(rootJSONObject.toString(4));
-            }
-            
-            this.lastJSONObject = this.updatedJSONObject;
-            this.isLogBookChanged = false;
-            
-        } catch (IOException ex) {
-            LOG.log(Level.SEVERE, null, ex);
-            throwFileIOException("Error.logBookUpdateFileFailed", fileName, ex);
-            
-        } finally {
+            FileUtil.BackupGenerator generator = new FileUtil.BackupGenerator(this.file, backupFile);
+            boolean isSuccessful = false;
             try {
+                stream = getOutputStream(generator.startWriteProcess());
+                writer = new BufferedWriter(new OutputStreamWriter(stream));
+
+                ++this.header.lastUpdateId;
+                this.header.lastUpdateInstant = Instant.now();
+                this.header.lastUpdateAuthor = this.logBook.getActiveAuthor();
+
+                writeHeader(this.header, fileName, writer);
+
+                JSONObject rootJSONObject = new JSONObject();
+
+                if (this.updatedJSONObject == null) {
+                    this.updatedJSONObject = this.logBook.toJSONObject();
+                }
+
+                rootJSONObject.put(CURRENT_LOGBOOK_KEY, this.updatedJSONObject);
+
+                // TODO: Need to add the diff...
+                // We need a diff list.
+
+                if (shouldCompressFile()) {
+                    writer.write(rootJSONObject.toString());
+                }
+                else {
+                    writer.write(rootJSONObject.toString(4));
+                }
+
+                this.lastJSONObject = this.updatedJSONObject;
+                this.isLogBookChanged = false;
+
+                isSuccessful = true;
+                
+                // Only create the backup the first time we write out the file.
+                this.isCreateBackup = false;
+            }
+            finally {
                 if (writer != null) {
                     writer.close();
                 }
                 if (stream != null) {
                     stream.close();
                 }
-            } catch (IOException ex) {
-                LOG.log(Level.SEVERE, null, ex);
-                throwFileIOException("Error.logBookUpdateFileFailed", fileName, ex);
+
+                generator.finallyWriteProcess(isSuccessful);
             }
+            
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+            throwFileIOException("Error.logBookUpdateFileFailed", fileName, ex);
         }
     }
     
@@ -463,8 +477,8 @@ public class LogBookFile {
     }
     
     
-    protected OutputStream getOutputStream() throws FileNotFoundException, IOException {
-        FileOutputStream fileOutputStream = new FileOutputStream(this.file);
+    protected OutputStream getOutputStream(File file) throws FileNotFoundException, IOException {
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
         
         if (shouldCompressFile()) {
             GZIPOutputStream compressedOutputStream = new GZIPOutputStream(fileOutputStream);

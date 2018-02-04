@@ -1,21 +1,14 @@
 # TODO
     - Menu:
-        - Log File
-            - Open
-            - Save
+        - Log File: OK
         - View
             - Monthly
             - Timeline
-        = Log Entries
-            - New Log Entry
-            - Delete Log Entry
-            - List of open log entry views
+        - Log Entries: OK
         - Settings
             - Author
-            - Auto Save?
 
-    - Update LogBookEditor/LogBookFile to support creating a backup at the start of the session
-        and then not create a backup after that.
+    - Add undo to LogBookEditor.
 
     - Add ability to select individual entries in ItemListCell.
         - If more items than will fit, pop up list view, or maybe larger ItemListCell.
@@ -27,11 +20,6 @@
     - Linear view:
         - Just a ListView with a custom ListCell that encapsulates DayCell?
 
-    - Add means of adding tags already in use to the log entry view's tag editor.
-        - Could just be a choice or combo box control with a list of all the tags currently in use plus
-        an extra entry that's just to indicate the use, maybe down arrow.
-        When the value of the control changes, insert the tag and revert the value back
-        to the placeholder value.
 
 # Bugs
 

@@ -41,6 +41,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
@@ -79,6 +80,8 @@ public class LogBookViewController implements Initializable {
     private SeparatorMenuItem logEntryViewsSeparator;
     @FXML
     private Menu logEntriesMenu;
+    @FXML
+    private CheckMenuItem autoSaveMenuItem;
     
 
     private MonthlyView<DayLogEntries> monthlyViewControl;
@@ -120,6 +123,21 @@ public class LogBookViewController implements Initializable {
             }
         }
     }
+
+    @FXML
+    private void onSave(ActionEvent event) {
+        if (this.logBookEditor != null) {
+            this.logBookEditor.saveLogBook();
+        }
+    }
+
+    @FXML
+    private void onAutoSave(ActionEvent event) {
+        if (this.logBookEditor != null) {
+            this.logBookEditor.setAutoSave(!this.logBookEditor.getAutoSave());
+        }
+    }
+
     
     
     public enum ViewType {
@@ -303,7 +321,7 @@ public class LogBookViewController implements Initializable {
         
         this.mainMenuButton.showingProperty().addListener((property, oldValue, newValue)-> {
             if (newValue) {
-                updateLogEntriesMenu();
+                updateMenu();
             }
         });
         
@@ -397,6 +415,14 @@ public class LogBookViewController implements Initializable {
                 this.monthlyViewControl.reloadDateRange(startDate, endDate);
             }
         }        
+    }
+    
+    void updateMenu() {
+        if (this.autoSaveMenuItem != null) {
+            this.autoSaveMenuItem.setSelected(this.logBookEditor.getAutoSave());
+        }
+        
+        updateLogEntriesMenu();
     }
     
     void updateLogEntriesMenu() {

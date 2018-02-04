@@ -28,8 +28,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -51,6 +53,7 @@ public class LogBookEditor {
     
     public static final String PREFS_PREVIOUS_FILE_NAME = "PreviousFileName";
     public static final String PREFS_ACTIVE_AUTHOR_NAME = "ActiveAuthorName";
+    public static final String PREFS_AUTO_SAVE = "AutoSave";
     
     public static final int BTN_NEW_LOG_FILE = 1;
     public static final int BTN_OPEN_LOG_FILE = 2;
@@ -62,6 +65,18 @@ public class LogBookEditor {
     String activeAuthor;
     
     final Preferences preferences;
+    
+    private final BooleanProperty autoSave = new SimpleBooleanProperty(this, "autoSave", true);
+
+    public final BooleanProperty autoSaveProperty() {
+        return autoSave;
+    }
+    public final boolean getAutoSave() {
+        return autoSave.get();
+    }
+    public final void setAutoSave(boolean value) {
+        autoSave.set(value);
+    }
     
     
     // The key is the GUID of the log entry.
@@ -97,10 +112,22 @@ public class LogBookEditor {
         this.preferences = (preferences == null) ? Preferences.userNodeForPackage(this.getClass()) : preferences;
         
         if (this.preferences != null) {
-            this.activeAuthor = preferences.get(PREFS_ACTIVE_AUTHOR_NAME, "");
+            this.activeAuthor = this.preferences.get(PREFS_ACTIVE_AUTHOR_NAME, "");
             if (this.activeAuthor.isEmpty()) {
                 this.activeAuthor = System.getProperty("user.name");
             }
+            
+            this.autoSave.set(this.preferences.getBoolean(PREFS_AUTO_SAVE, true));
+            this.autoSave.addListener((property, oldValue, newValue) -> {
+                if (this.preferences != null) {
+                    this.preferences.putBoolean(PREFS_AUTO_SAVE, newValue);
+                    try {
+                        this.preferences.flush();
+                    } catch (BackingStoreException ex) {
+                        LOG.log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
         }
     }
     
@@ -406,6 +433,16 @@ public class LogBookEditor {
     }
     
     
+    public void saveLogBook() {
+        try {
+            this.logBookFile.get().updateFile();
+        } catch (LogBookFile.FileException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+            PromptDialog.showOKDialog(ex.getLocalizedMessage(), ResourceSource.getString("Title.severeError"));
+        }
+    }
+    
+    
     /**
      * @return Retrieves a modifiable array of the open {@link LogEntryView}s.
      */
@@ -485,6 +522,10 @@ public class LogBookEditor {
         }
         else {
             logEntry.copyFrom(workingLogEntry);
+        }
+        
+        if (getAutoSave()) {
+            saveLogBook();
         }
     }
     
