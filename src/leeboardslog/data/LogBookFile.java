@@ -99,7 +99,7 @@ public class LogBookFile {
     
     /**
      * Determines if a version string is supported.
-     * @param version
+     * @param version   The version of interest.
      * @return <code>true</code> if the version is supported.
      */
     public static boolean isVersionSupported(String version) {
@@ -165,7 +165,7 @@ public class LogBookFile {
      * @param fileName  The file name.
      * @param reader    The reader being read from.
      * @return  The header.
-     * @throws leeboardslog.data.LogBookFile.FileException 
+     * @throws leeboardslog.data.LogBookFile.FileException Thrown on errors.
      */
     public static Header readHeader(String fileName, BufferedReader reader) throws FileException {
         try {
@@ -202,7 +202,7 @@ public class LogBookFile {
      * @param header    The header to write.
      * @param fileName  The name of the file being written to.
      * @param writer    The writer to write to.
-     * @throws leeboardslog.data.LogBookFile.FileException 
+     * @throws leeboardslog.data.LogBookFile.FileException  Thrown on errors.
      */
     public static void writeHeader(Header header, String fileName, BufferedWriter writer) throws FileException {
         try {
@@ -231,7 +231,7 @@ public class LogBookFile {
      * @param file  The file object identifying the file.
      * @param activeAuthor  The active author for the file, may be <code>null</code>.
      * @return  The log book.
-     * @throws leeboardslog.data.LogBookFile.FileException 
+     * @throws leeboardslog.data.LogBookFile.FileException  Thrown on errors.
      */
     public static LogBookFile createLogBookFile(File file, String activeAuthor) throws FileException {
         String fileName = file.getAbsolutePath();
@@ -260,7 +260,7 @@ public class LogBookFile {
      * @param file  The file object identifying the file.
      * @param activeAuthor  The active author for the file, may be <code>null</code>.
      * @return  The log book file.
-     * @throws leeboardslog.data.LogBookFile.FileException 
+     * @throws leeboardslog.data.LogBookFile.FileException  Thrown on errors.
      */
     public static LogBookFile openLogBookFile(File file, String activeAuthor) throws FileException {
         String fileName = file.getAbsolutePath();
@@ -392,7 +392,7 @@ public class LogBookFile {
 
     /**
      * Saves the log book to its file if the log book has changed.
-     * @throws leeboardslog.data.LogBookFile.FileException 
+     * @throws leeboardslog.data.LogBookFile.FileException  Thrown on errors.
      */
     public void updateFile() throws FileException {
         if (!isLogBookChanged()) {

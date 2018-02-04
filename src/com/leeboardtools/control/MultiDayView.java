@@ -149,7 +149,7 @@ public abstract class MultiDayView <T> extends Control {
     
     /**
      * Used to pass information to the header and body cell factory callbacks.
-     * @param <T> 
+     * @param <T>   The object type of the MultiDayView.
      */
     public static class ContentsCellFactoryInfo<T> {
         public final MultiDayView view;

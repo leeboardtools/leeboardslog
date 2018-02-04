@@ -27,8 +27,8 @@ import javafx.stage.Stage;
 import leeboardslog.data.LogBookFile;
 
 /**
- * Represents the a main window for editing an {@link LogBook} via a {@link LogBookEditor}.
- * This encapsulates the actual {@link Window}.
+ * Represents the a main window for editing an {@link leeboardslog.data.LogBook} via a {@link LogBookEditor}.
+ * This encapsulates the actual {@link javafx.stage.Window}.
  * @author Albert Santos
  */
 public class LogBookWindow {

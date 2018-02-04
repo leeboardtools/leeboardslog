@@ -90,10 +90,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * For time periods that start and end at midnight (zone id time):
      * <ul>
      *      <li>If the time period is a single day the date is returned</li>
-     *      <li>Otherwise a string in the form (start date) -> (end date - 1).
+     *      <li>Otherwise a string in the form (start date) to (end date - 1).
      * </ul>
      * For other time periods the full date/time is returned in the form:
-     * (start date/time) -> (end date/time).
+     * (start date/time) to (end date/time).
      * @param zoneId    The zone id of the date-times, if <code>null</code> {@link ZoneId#systemDefault() } is
      * called to obtain the zone id.
      * @return The string representation.
@@ -144,7 +144,7 @@ public class TimePeriod implements Comparable <TimePeriod> {
     
     /**
      * Retrieves the duration of the time period.
-     * @return The duration, this always >= 0.
+     * @return The duration, this always &ge; 0.
      */
     public final Duration getDuration() {
         return Duration.between(this.startInstant, endInstant);
@@ -714,7 +714,7 @@ public class TimePeriod implements Comparable <TimePeriod> {
     
     /**
      * Comparator that orders first by startInstant, and if those are the same then
-     * by the end instant. The ordering is < 0 if the o1 instant is before the o2 instant.
+     * by the end instant. The ordering is &lt; 0 if the o1 instant is before the o2 instant.
      */
     public static class StartComparator implements Comparator <TimePeriod> {
         @Override
@@ -730,7 +730,7 @@ public class TimePeriod implements Comparable <TimePeriod> {
     
     /**
      * Comparator that orders first by endInstant, and if those are the same then
-     * by start instant. The ordering is < 0 if the o1 instant is before the o2 instant.
+     * by start instant. The ordering is &lt; 0 if the o1 instant is before the o2 instant.
      */
     public static class EndComparator implements Comparator <TimePeriod> {
         @Override

@@ -74,7 +74,6 @@ public class LogBookEditor {
 
     /**
      * Defines the log book that's currently being edited.
-     * @return The logBookFile property.
      */
     private final ReadOnlyObjectWrapper<LogBookFile> logBookFile = new ReadOnlyObjectWrapper<>(this, "logBookFile");
 
@@ -128,7 +127,7 @@ public class LogBookEditor {
      * Attempts to open the last log book file based upon the preferences, if
      * that fails this displays a warning, offering the choice of either choosing
      * another log book to open or creating a new log book.
-     * @param ownerWindow 
+     * @param ownerWindow If not <code>null</code> the owner window.
      * @return  <code>false</code> if the exit was chosen.
      */
     public boolean reopenLastLogBook(Window ownerWindow) {
@@ -185,9 +184,9 @@ public class LogBookEditor {
     
     /**
      * Attempts to open the last edited log book file.
-     * @param ownerWindow
+     * @param ownerWindow If not <code>null</code> the owner window.
      * @return <code>false</code> if there was no last log book opened.
-     * @throws leeboardslog.data.LogBookFile.FileException 
+     * @throws leeboardslog.data.LogBookFile.FileException  Thrown on errors.
      */
     protected boolean openLastLogBook(Window ownerWindow) throws LogBookFile.FileException {
         String previousFileName = this.preferences.get(PREFS_PREVIOUS_FILE_NAME, "");
@@ -262,7 +261,7 @@ public class LogBookEditor {
      * Prompts for the name of a new log book file and creates it.
      * @param ownerWindow   The owner window, may be <code>null</code>.
      * @return  <code>true</code> if a new file was created, false if the prompt was canceled.
-     * @throws leeboardslog.data.LogBookFile.FileException 
+     * @throws leeboardslog.data.LogBookFile.FileException Thrown on errors.
      */
     public boolean promptNewLogBook(Window ownerWindow) throws LogBookFile.FileException {
         // We need a name for the log book file.
@@ -297,7 +296,7 @@ public class LogBookEditor {
      * Prompts for the name of an existing log book and opens it.
      * @param ownerWindow   The owner window, may be <code>null</code>.
      * @return  <code>true</code> if a file was opened, false if the prompt was canceled.
-     * @throws leeboardslog.data.LogBookFile.FileException 
+     * @throws leeboardslog.data.LogBookFile.FileException Thrown on errors.
      */
     public boolean promptOpenLogBook(Window ownerWindow) throws LogBookFile.FileException {
         LogBookFile currentLogBookFile = this.logBookFile.get();

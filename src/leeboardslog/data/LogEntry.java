@@ -192,7 +192,6 @@ public class LogEntry {
     /**
      * Defines the body content of the log entry. The format is determined by the bodyFormat
      * property.
-     * @return The content property.
      */
     private final ReadOnlyStringWrapper body = new ReadOnlyStringWrapper(this, BODY_PROP);
 
@@ -411,24 +410,8 @@ public class LogEntry {
     public final String getGuid() {
         return this.guid;
     }
-    
-    
-    /**
-     * Helper that returns the LogEntry given an observable passed to a property event
-     * listener.
-     * @param observable
-     * @return The LogEntry if observable is in fact a LogEntry, <code>null</code> otherwise.
-     */
-    public static LogEntry fromObservable(Observable observable) {
-        if (observable instanceof ReadOnlyProperty) {
-            Object bean = ((ReadOnlyProperty)observable).getBean();
-            if (bean instanceof LogEntry) {
-                return (LogEntry)bean;
-            }
-        }
-        return null;
-    }
 
+    
     @Override
     public int hashCode() {
         int hash = 5;
