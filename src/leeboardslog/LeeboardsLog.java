@@ -18,13 +18,8 @@ package leeboardslog;
 import java.util.prefs.Preferences;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 import leeboardslog.ui.LogBookEditor;
-import leeboardslog.ui.LogBookViewController;
-import leeboardslog.ui.LogBookWindow;
 
 /**
  *
@@ -50,7 +45,7 @@ public class LeeboardsLog extends Application {
         Preferences preferences = Preferences.userNodeForPackage(LeeboardsLog.class);
         logBookEditor = new LogBookEditor(preferences);
         
-        if (!logBookEditor.restoreLastLogBook(stage)) {
+        if (!logBookEditor.reopenLastLogBook(stage)) {
             Platform.exit();
             return;
         }

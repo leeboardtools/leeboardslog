@@ -17,6 +17,7 @@ package leeboardslog.ui;
 
 import com.leeboardtools.control.LocalDateSpinnerValueFactory;
 import com.leeboardtools.control.MonthlyView;
+import com.leeboardtools.dialog.PromptDialog;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
@@ -31,18 +32,23 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import leeboardslog.data.DayLogEntries;
 import com.leeboardtools.util.ListConverter;
+import com.leeboardtools.util.ResourceSource;
 import com.leeboardtools.util.TimePeriod;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.event.ActionEvent;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.stage.Stage;
 import leeboardslog.data.LogBook;
+import leeboardslog.data.LogBookFile;
 import leeboardslog.data.LogEntry;
 
 
@@ -51,6 +57,7 @@ import leeboardslog.data.LogEntry;
  * @author Albert Santos
  */
 public class LogBookViewController implements Initializable {
+    private final static Logger LOG = Logger.getLogger(LogBookViewController.class.getName());
     
     @FXML
     private Spinner<LocalDate> month;
@@ -76,6 +83,7 @@ public class LogBookViewController implements Initializable {
 
     private MonthlyView<DayLogEntries> monthlyViewControl;
     private LogBookEditor logBookEditor;
+    private Stage stage;
     
     private final ObjectProperty<LocalDate> activeDate = new SimpleObjectProperty<>(this, "activeDate", LocalDate.now());
     
@@ -87,6 +95,30 @@ public class LogBookViewController implements Initializable {
     }
     public final ObjectProperty<LocalDate> activeDateProperty() {
         return activeDate;
+    }
+
+    @FXML
+    private void onNewLogBook(ActionEvent event) {
+        if (this.logBookEditor != null) {
+            try {
+                this.logBookEditor.promptNewLogBook(this.stage);
+            } catch (LogBookFile.FileException ex) {
+                LOG.log(Level.SEVERE, null, ex);
+                PromptDialog.showOKDialog(stage, ex.getLocalizedMessage(), ResourceSource.getString("Title.severeError"));
+            }
+        }
+    }
+
+    @FXML
+    private void onOpenLogBook(ActionEvent event) {
+        if (this.logBookEditor != null) {
+            try {
+                this.logBookEditor.promptOpenLogBook(this.stage);
+            } catch (LogBookFile.FileException ex) {
+                LOG.log(Level.SEVERE, null, ex);
+                PromptDialog.showOKDialog(stage, ex.getLocalizedMessage(), ResourceSource.getString("Title.severeError"));
+            }
+        }
     }
     
     
@@ -305,7 +337,9 @@ public class LogBookViewController implements Initializable {
     };
     
     
-    void setLogBookEditor(LogBookEditor logBookEditor) {
+    void setupController(LogBookEditor logBookEditor, Stage stage) {
+        this.stage = stage;
+        
         if (this.logBookEditor != logBookEditor) {
             
             this.logBookEditor = logBookEditor;
@@ -340,9 +374,12 @@ public class LogBookViewController implements Initializable {
         if (this.logBookEditor != null) {
             logBook = this.logBookEditor.getLogBook();
         }
-        if (logBook != null) {
-            if (this.monthlyViewControl != null) {
+        if (this.monthlyViewControl != null) {
+            if (logBook != null) {
                 this.monthlyViewControl.setItems(logBook.getEntriesByDate());
+            }
+            else {
+                this.monthlyViewControl.setItems(null);
             }
         }
     }

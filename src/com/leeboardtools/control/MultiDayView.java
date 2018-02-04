@@ -359,6 +359,7 @@ public abstract class MultiDayView <T> extends Control {
             if (newValue != null) {
                 newValue.addListener(itemsListener);
             }
+            reloadDateRange(getFirstVisibleDate(), getLastVisibleDate());
         });
     }
     

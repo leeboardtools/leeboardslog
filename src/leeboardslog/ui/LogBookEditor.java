@@ -69,7 +69,7 @@ public class LogBookEditor {
     
     final List<LogBookWindow> logBookWindows = new ArrayList<>();
 
-    final List<Listener> listeners = new ArrayList<Listener>();
+    final List<Listener> listeners = new ArrayList<>();
     
 
     /**
@@ -131,7 +131,7 @@ public class LogBookEditor {
      * @param ownerWindow 
      * @return  <code>false</code> if the exit was chosen.
      */
-    public boolean restoreLastLogBook(Window ownerWindow) {
+    public boolean reopenLastLogBook(Window ownerWindow) {
         ArrayList<String> promptMsgs = new ArrayList<>();
         try {
             if (openLastLogBook(ownerWindow)) {
@@ -211,7 +211,13 @@ public class LogBookEditor {
         if (initialFile != null) {
             if (initialFile.exists()) {
                 isFileSet = true;
-                fileChooser.setInitialDirectory(initialFile);
+                if (initialFile.isDirectory()) {
+                    fileChooser.setInitialDirectory(initialFile);
+                }
+                else {
+                    fileChooser.setInitialDirectory(initialFile.getParentFile());
+                    fileChooser.setInitialFileName(initialFile.getName());
+                }
             }
             else {
                 File dir = initialFile.getParentFile();

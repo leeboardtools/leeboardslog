@@ -24,6 +24,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import leeboardslog.data.LogBookFile;
 
 /**
  * Represents the a main window for editing an {@link LogBook} via a {@link LogBookEditor}.
@@ -38,6 +39,10 @@ public class LogBookWindow {
     protected LogBookWindow(LogBookEditor logBookEditor, Stage stage) {
         this.logBookEditor = logBookEditor;
         this.stage = stage;
+        
+        this.logBookEditor.logBookFileProperty().addListener((property, oldValue, newValue) -> {
+            updateFromLogBookFile(newValue);
+        });
     }
     
     public void showWindow() {
@@ -66,21 +71,22 @@ public class LogBookWindow {
             scene.getStylesheets().add("leeboardslog/Styles.css");
             
             this.stage.setScene(scene);
-            this.stage.setTitle(this.logBookEditor.getLogBookFile().getFile().getName());
+            updateFromLogBookFile(this.logBookEditor.getLogBookFile());
             
             this.controller = (LogBookViewController)fxmlLoader.getController();
             if (this.controller != null) {
-                this.controller.setLogBookEditor(this.logBookEditor);
+                this.controller.setupController(this.logBookEditor, this.stage);
             }
             
             this.stage.setOnCloseRequest((event)-> {
                 if (this.logBookEditor != null) {
                     if (!this.logBookEditor.safeCloseLogBookWindow(this)) {
+                        // Cancel the close...
                         event.consume();
                     }
                     else {
                         if (this.controller != null) {
-                            this.controller.setLogBookEditor(null);
+                            this.controller.setupController(null, null);
                             this.controller = null;
                         }
                     }
@@ -94,5 +100,15 @@ public class LogBookWindow {
     
     protected void shutDownWindow() {
         
+    }
+    
+    void updateFromLogBookFile(LogBookFile logBookFile) {
+        String title = "";
+        if (logBookFile != null) {
+            if (logBookFile.getFile() != null) {
+                title = logBookFile.getFile().getName();
+            }
+        }
+        this.stage.setTitle(title);
     }
 }
