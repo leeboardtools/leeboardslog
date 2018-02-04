@@ -25,9 +25,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.TreeSet;
 import java.util.UUID;
 import javafx.beans.Observable;
 import javafx.beans.property.ObjectProperty;
@@ -157,7 +157,7 @@ public class LogEntry {
     /**
      * Defines the set of tags associated with the log entry.
      */
-    private final ReadOnlySetWrapper<String> tags = new ReadOnlySetWrapper<>(this, TAGS_PROP, FXCollections.observableSet(new HashSet<>()));
+    private final ReadOnlySetWrapper<String> tags = new ReadOnlySetWrapper<>(this, TAGS_PROP, FXCollections.observableSet(new TreeSet<>()));
     
     public final ReadOnlySetProperty<String> tagsProperty() {
         return tags.getReadOnlyProperty();
@@ -383,16 +383,25 @@ public class LogEntry {
             return;
         }
         
-        setTimePeriod(other.getTimePeriod());
-        setZoneId(other.getZoneId());
-        setTitle(other.getTitle());
-        setLatestAuthor(other.getLatestAuthor());
-        setDetailLevel(other.getDetailLevel());
-        
-        this.tags.get().clear();
-        this.tags.get().addAll(other.getTags());
-        
-        setBody(other.getBodyFormat(), other.getBody());
+        ++this.listenerDisableCount;
+        try {
+            setTimePeriod(other.getTimePeriod());
+            setZoneId(other.getZoneId());
+            setTitle(other.getTitle());
+            setLatestAuthor(other.getLatestAuthor());
+            setDetailLevel(other.getDetailLevel());
+
+            this.tags.get().clear();
+            this.tags.get().addAll(other.getTags());
+
+            setBody(other.getBodyFormat(), other.getBody());
+        }
+        finally {
+            --this.listenerDisableCount;
+            if (this.listenerDisableCount == 0) {
+                fireLogEntryChanged();
+            }
+        }
     }
     
     

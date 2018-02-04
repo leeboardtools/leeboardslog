@@ -211,7 +211,7 @@ public class LogEntryView {
             this.viewController.setLogEntryView(this);
 
             this.viewStage.setTitle(getViewTitle());
-            this.viewController.setLogEntry(this.workingLogEntry);
+            this.viewController.setupController(this.workingLogEntry, this.logBookEditor.getLogBook());
             
             this.viewStage.setScene(scene);
             this.viewStage.setOnCloseRequest((event)-> {

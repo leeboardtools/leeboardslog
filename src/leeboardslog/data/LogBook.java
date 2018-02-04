@@ -464,6 +464,7 @@ public class LogBook {
         EntryMaster(LogEntry logEntry) {
             this.logEntry = logEntry;
             this.oldLogEntryValues = new LogEntry(logEntry.getGuid(), logEntry.getTimePeriod(), logEntry.getZoneId());
+            this.oldLogEntryValues.copyFrom(logEntry);
             this.timePeriodKey = new LogEntry.TimePeriodKey(logEntry);
             this.timePeriodKey.timePeriod.getDates(this.localDates, getCurrentZoneId());
         }

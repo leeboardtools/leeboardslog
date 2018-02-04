@@ -18,15 +18,23 @@ package leeboardslog.ui;
 import com.leeboardtools.control.TimePeriodEditController;
 import com.leeboardtools.util.ResourceSource;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.util.StringConverter;
+import leeboardslog.data.LogBook;
 import leeboardslog.data.LogEntry;
 
 /**
@@ -52,6 +60,8 @@ public class LogEntryViewController implements Initializable {
     private ComboBox<LogEntry.DetailLevel> levelPicker;
     @FXML
     private TextField tagsEditor;
+    @FXML
+    private MenuButton tagsMenuButton;
     
     
     private TimePeriodEditController timePeriodEditController;
@@ -125,16 +135,18 @@ public class LogEntryViewController implements Initializable {
     
     LogEntryView logEntryView;
     LogEntry logEntry;
+    LogBook logBook;
     
     void setLogEntryView(LogEntryView logEntryView) {
         this.logEntryView = logEntryView;
     }
     
-    void setLogEntry(LogEntry logEntry) {
-        if (this.logEntry == logEntry) {
+    void setupController(LogEntry logEntry, LogBook logBook) {
+        if ((this.logEntry == logEntry) && (this.logBook == logBook)) {
             return;
         }
         
+        this.logBook = logBook;
         this.logEntry = logEntry;
         if (this.logEntry != null) {
             this.titleEditor.setDisable(false);
@@ -145,6 +157,15 @@ public class LogEntryViewController implements Initializable {
             
             this.levelPicker.setDisable(false);
             this.levelPicker.setValue(this.logEntry.getDetailLevel());
+            
+            this.tagsEditor.setDisable(false);
+            this.tagsEditor.setText(tagsToString(logEntry));
+            
+            this.tagsMenuButton.setDisable(false);
+            this.logBook.tagsInUseProperty().addListener((property, oldValue, newValue) -> {
+                updateTagsInUseMenu();
+            });
+            updateTagsInUseMenu();
         }
         else {
             this.titleEditor.setDisable(true);
@@ -155,12 +176,71 @@ public class LogEntryViewController implements Initializable {
             
             this.levelPicker.setDisable(true);
             this.levelPicker.setValue(null);
+            
+            this.tagsEditor.setDisable(true);
+            this.tagsEditor.setText("");
+            
+            this.tagsMenuButton.setDisable(true);
         }
     }
     
+    void updateTagsInUseMenu() {
+        if ((this.logBook == null) || (this.tagsMenuButton == null)) {
+            return;
+        }
+        
+        ObservableList<MenuItem> menuItems = this.tagsMenuButton.getItems();
+        menuItems.clear();
+        this.logBook.getTagsInUse().forEach((tag) -> {
+            MenuItem menuItem = new MenuItem(tag);
+            menuItem.setOnAction((event) -> {
+                insertTag(tag);
+            });
+            menuItems.add(menuItem);
+        });
+    }
+    
+    void insertTag(String tag) {
+        SortedSet<String> tags = stringToTags(this.tagsEditor.getText());
+        tags.add(tag);
+        this.tagsEditor.setText(tagsToString(tags));
+    }
+    
+    public static String tagsToString(Set<String> tags) {
+        StringBuilder builder = new StringBuilder();
+        tags.forEach((tag) -> {
+            if (builder.length() > 0) {
+                builder.append(",");
+            }
+            builder.append(tag);
+        });
+        return builder.toString();
+    }
+    
+    public static SortedSet<String> stringToTags(String text) {
+        String [] tags = text.split(",");
+        for (int i = 0; i < tags.length; ++i) {
+            tags[i] = tags[i].trim();
+        }
+        
+        TreeSet<String> tagsSet = new TreeSet<>(Arrays.asList(tags));
+        tagsSet.remove("");
+        return tagsSet;
+    }
+    
+    public static String tagsToString(LogEntry logEntry) {
+        return tagsToString(logEntry.getTags());
+    }
+    
+    public static void stringToTags(LogEntry logEntry, String text) {
+        logEntry.getTags().clear();
+        logEntry.getTags().addAll(stringToTags(text));
+    }
     
     void updateLogEntryFromControls() {
         this.logEntry.setTitle(this.titleEditor.getText());
+        
+        stringToTags(this.logEntry, this.tagsEditor.getText());
         
         // TODO: Make sure the contents are up-to-date.
         

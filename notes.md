@@ -1,4 +1,19 @@
 # TODO
+    - Menu:
+        - Log File
+            - Open
+            - Save
+        - View
+            - Monthly
+            - Timeline
+        = Log Entries
+            - New Log Entry
+            - Delete Log Entry
+            - List of open log entry views
+        - Settings
+            - Author
+            - Auto Save?
+
     - Update LogBookEditor/LogBookFile to support creating a backup at the start of the session
         and then not create a backup after that.
 
@@ -12,12 +27,11 @@
     - Linear view:
         - Just a ListView with a custom ListCell that encapsulates DayCell?
 
-    - Add a priority to LogEntry, a double value. What's the idea behind the priority?
-        to be able to filter out different levels of detail. Maybe call it detail level,
-        and not a double:
-        - Big picture
-        - Highlight
-        - Detail
+    - Add means of adding tags already in use to the log entry view's tag editor.
+        - Could just be a choice or combo box control with a list of all the tags currently in use plus
+        an extra entry that's just to indicate the use, maybe down arrow.
+        When the value of the control changes, insert the tag and revert the value back
+        to the placeholder value.
 
 # Bugs
 
