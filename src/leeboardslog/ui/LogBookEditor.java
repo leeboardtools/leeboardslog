@@ -69,6 +69,8 @@ public class LogBookEditor {
     
     final List<LogBookWindow> logBookWindows = new ArrayList<>();
 
+    final List<Listener> listeners = new ArrayList<Listener>();
+    
 
     /**
      * Defines the log book that's currently being edited.
@@ -157,7 +159,7 @@ public class LogBookEditor {
             promptDialog.addButton(ResourceSource.getString("Button.exit"), BTN_EXIT);
         
             try {
-                switch (promptDialog.showDialog(ownerWindow)) {
+                switch (promptDialog.showOptionsDialog(ownerWindow)) {
                     case BTN_NEW_LOG_FILE :
                         if (promptNewLogBook(ownerWindow)) {
                             return true;
@@ -348,6 +350,30 @@ public class LogBookEditor {
         if (isChanges) {
             // Prompt is 'One or more Log Entries have been modified. Do you want to save the
             // changes to all, select which ones, discard all the changes, cancel.
+            PromptDialog promptDialog = new PromptDialog();
+            promptDialog.setTitle(ResourceSource.getString("Title.saveChanges"));
+
+            promptDialog.addMessage(ResourceSource.getString("Prompt.saveMultipleLogEntryChanges"));
+
+            promptDialog.addButton(ResourceSource.getString("Button.yes"), PromptDialog.BTN_YES);
+            promptDialog.addButton(ResourceSource.getString("Button.no"), PromptDialog.BTN_NO);
+            promptDialog.addButton(ResourceSource.getString("Button.cancel"), PromptDialog.BTN_CANCEL);
+            promptDialog.setDefaultButtonId(PromptDialog.BTN_YES);
+            promptDialog.setCancelButtonId(PromptDialog.BTN_CANCEL);
+
+            switch (promptDialog.showSimpleDialog(null)) {
+                case PromptDialog.BTN_YES :
+                    isSaveChanges = true;
+                    break;
+                    
+                case PromptDialog.BTN_NO :
+                    isSaveChanges = false;
+                    break;
+
+                case PromptDialog.BTN_CANCEL :
+                    return false;
+            }
+
         }
         
         // Close all the log entry views.
@@ -355,13 +381,18 @@ public class LogBookEditor {
             logEntryView.closeView(isSaveChanges);
         }
 
+        if (isSaveChanges) {
+            try {
+                this.logBookFile.get().updateFile();
+            } catch (LogBookFile.FileException ex) {
+                LOG.log(Level.SEVERE, null, ex);
+                PromptDialog.showOKDialog(ex.getLocalizedMessage(), ResourceSource.getString("Title.severeError"));
+            }
+        }
         
         this.logBookFile.set(null);
         return true;
     }
-    
-    
-    
     
     
     /**
@@ -417,6 +448,9 @@ public class LogBookEditor {
         this.logEntryViewsByGuid.put(logEntry.getGuid(), view);
         
         view.addListener((LogEntryView view1) -> {
+            listeners.forEach((listener)-> {
+                listener.logEntryViewClosed(this, view1.getLogEntry());
+            });
             logEntryViewsByGuid.remove(view1.getLogEntry().getGuid());
         });
         
@@ -488,5 +522,18 @@ public class LogBookEditor {
         window.shutDownWindow();
         
         return true;
+    }
+    
+    
+    public interface Listener {
+        public void logEntryViewClosed(LogBookEditor editor, LogEntry logEntry);
+    }
+    
+    public final void addListener(Listener listener) {
+        this.listeners.add(listener);
+    }
+    
+    public final void removeListener(Listener listener) {
+        this.listeners.remove(listener);
     }
 }

@@ -15,6 +15,7 @@
  */
 package leeboardslog.data;
 
+import com.leeboardtools.text.TextUtil;
 import com.leeboardtools.util.JSONUtil;
 import com.leeboardtools.util.TimePeriod;
 import java.time.Duration;
@@ -30,9 +31,13 @@ import java.util.Objects;
 import java.util.UUID;
 import javafx.beans.Observable;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlySetWrapper;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleSetProperty;
@@ -67,7 +72,8 @@ public class LogEntry {
     public static final String TITLE_PROP = "title";
     public static final String LATEST_AUTHOR_PROP = "latestAuthor";
     public static final String TAGS_PROP = "tags";
-    public static final String CONTENT_HTML_BODY_TEXT_PROP = "contentHTMLBodyText";
+    public static final String BODY_PROP = "body";
+    public static final String BODY_FORMAT_PROP = "bodyFormat";
     
     private final String guid;
     
@@ -122,7 +128,7 @@ public class LogEntry {
     /**
      * Defines the title of the log entry.
      */
-    private final StringProperty title = new SimpleStringProperty(this, TITLE_PROP);
+    private final StringProperty title = new SimpleStringProperty(this, TITLE_PROP, "");
 
     public final StringProperty titleProperty() {
         return title;
@@ -166,23 +172,79 @@ public class LogEntry {
     
     
     /**
-     * Defines the content of the log entry as HTML text that appears
-     * within a &lt;body&gt; element, the &lt;body&gt; element is not included.
+     * Defines the body content of the log entry. The format is determined by the bodyFormat
+     * property.
      * @return The content property.
      */
-    private final StringProperty contentHTMLBodyText = new SimpleStringProperty(this, CONTENT_HTML_BODY_TEXT_PROP);
+    private final ReadOnlyStringWrapper body = new ReadOnlyStringWrapper(this, BODY_PROP);
 
-    public final StringProperty contentHTMLBodyText() {
-        return contentHTMLBodyText;
+    public final ReadOnlyStringProperty bodyProperty() {
+        return body.getReadOnlyProperty();
     }
-    public final String getContentHTMLBodyText() {
-        return contentHTMLBodyText.get();
-    }
-    public final void setContentHTMLBodyText(String value) {
-        contentHTMLBodyText.set(value);
+    public final String getBody() {
+        return body.get();
     }
 
 
+    /**
+     * The text formatting we support.
+     */
+    public static enum Format {
+        /**
+         * The fail-safe format, text is presented as-is.
+         */
+        PLAIN_TEXT("plain"),
+        
+        /**
+         * The text is styled with our pseudo-HTML tags. This is the default.
+         */
+        STYLED_TEXT("styled");
+        
+        private final String id;
+        private Format(String id) {
+            this.id = id;
+        }
+        
+        @Override 
+        public String toString() {
+            return id;
+        }
+        
+        public static Format parse(String text) {
+            for (Format format : values()) {
+                if (format.id.equals(text)) {
+                    return format;
+                }
+            }
+            throw new RuntimeException();
+        }
+    }
+    
+    
+    /**
+     * Defines the format type of the body content of the log entry.
+     */
+    private final ReadOnlyObjectWrapper<Format> bodyFormat = new ReadOnlyObjectWrapper<>(this, BODY_FORMAT_PROP, Format.STYLED_TEXT);
+    
+    public final ReadOnlyObjectProperty<Format> bodyFormatProperty() {
+        return bodyFormat.getReadOnlyProperty();
+    }
+    public Format getBodyFormat() {
+        return bodyFormat.get();
+
+    }
+    
+    
+    /**
+     * Sets the body content of the log entry.
+     * @param format    The format type of the body content.
+     * @param value The text of the body content.
+     */
+    public void setBody(Format format, String value) {
+        this.bodyFormat.set(format);
+        this.body.set(value);
+    }
+    
     
     /**
      * Constructor.
@@ -208,7 +270,7 @@ public class LogEntry {
         this.timePeriod.set(timePeriod);
         this.zoneId.set(zoneId);
         
-        this.timePeriod.addListener((value)-> {
+        this.timePeriod.addListener((property, oldValue, newValue)-> {
             fireLogEntryChanged();
         });
         this.zoneId.addListener((value)-> {
@@ -224,7 +286,9 @@ public class LogEntry {
             fireLogEntryChanged();
         });
 
-        this.contentHTMLBodyText.addListener((value)-> {
+        // Since the body format is only changed when the body itself is changed
+        // we don't need a listener for bodyFormat.
+        this.body.addListener((value)-> {
             fireLogEntryChanged();
         });
     }
@@ -255,7 +319,23 @@ public class LogEntry {
         JSONArray tags = jsonObject.getJSONArray(TAGS_PROP);
         JSONUtil.arrayToSet(tags, logEntry.tags.get());
         
-        logEntry.setContentHTMLBodyText(jsonObject.optString(CONTENT_HTML_BODY_TEXT_PROP, null));
+        String bodyFormatText = jsonObject.optString(BODY_FORMAT_PROP, null);
+        String body = jsonObject.optString(BODY_PROP, null);
+        if (body != null) {
+            if (bodyFormatText == null) {
+                bodyFormatText = Format.PLAIN_TEXT.toString();
+            }
+            
+            Format bodyFormat;
+            try {
+                bodyFormat = Format.parse(bodyFormatText);
+            }
+            catch (RuntimeException ex) {
+                bodyFormat = Format.PLAIN_TEXT;
+            }
+            
+            logEntry.setBody(bodyFormat, body);
+        }
         
         return logEntry;
     }
@@ -272,7 +352,8 @@ public class LogEntry {
         jsonObject.put(TITLE_PROP, this.title.get());
         jsonObject.put(LATEST_AUTHOR_PROP, this.latestAuthor.get());
         jsonObject.put(TAGS_PROP, this.tags.get());
-        jsonObject.put(CONTENT_HTML_BODY_TEXT_PROP, this.contentHTMLBodyText.get());
+        jsonObject.put(BODY_FORMAT_PROP, this.bodyFormat.get());
+        jsonObject.put(BODY_PROP, this.body.get());
     }
     
     
@@ -304,7 +385,7 @@ public class LogEntry {
         this.tags.get().clear();
         this.tags.get().addAll(other.getTags());
         
-        setContentHTMLBodyText(other.getContentHTMLBodyText());
+        setBody(other.getBodyFormat(), other.getBody());
     }
     
     
@@ -341,7 +422,7 @@ public class LogEntry {
         hash = 79 * hash + Objects.hashCode(this.title.get());
         hash = 79 * hash + Objects.hashCode(this.latestAuthor.get());
         hash = 79 * hash + Objects.hashCode(this.tags.get());
-        hash = 79 * hash + Objects.hashCode(this.contentHTMLBodyText.get());
+        hash = 79 * hash + Objects.hashCode(this.body.get());
         return hash;
     }
 
@@ -375,7 +456,7 @@ public class LogEntry {
         if (!Objects.equals(this.tags.get(), other.tags.get())) {
             return false;
         }
-        if (!Objects.equals(this.contentHTMLBodyText.get(), other.contentHTMLBodyText.get())) {
+        if (!Objects.equals(this.body.get(), other.body.get())) {
             return false;
         }
         return true;
@@ -394,6 +475,10 @@ public class LogEntry {
         }
         finally {
             --this.listenerDisableCount;
+        }
+        
+        if (this.listenerDisableCount == 0) {
+            fireLogEntryChanged();
         }
     }
     
@@ -420,7 +505,7 @@ public class LogEntry {
     public final void setStartEndTime(LocalDateTime dateTimeA, LocalDateTime dateTimeB) {
         setStartEndTime(dateTimeA, dateTimeB, null);
     }
-    
+        
     
     /**
      * Sets the time period represented by the entry to a specific local date/time.
@@ -477,11 +562,32 @@ public class LogEntry {
      */
     public final String getHeadingText() {
         String text = getTitle();
-        if ((text == null) || text.isEmpty()) {
-            // TODO Get the first line of ContentHTMLBodyText()...
+        if (!TextUtil.isAnyText(text)) {
+            String firstLine = TextUtil.getLine(getBody());
+            if (firstLine != null) {
+                // TODO Strip out markup...
+                return firstLine;
+            }
+            
             text = this.timePeriod.get().toString();
         }
         return text;
+    }
+    
+    
+    /**
+     * Determines if the entry has any significant content (title, body)
+     * @return <code>true</code> if it does.
+     */
+    public final boolean isAnyContent() {
+        if (TextUtil.isAnyText(getTitle())) {
+            return true;
+        }
+        if (TextUtil.isAnyText(getBody())) {
+            return true;
+        }
+        
+        return false;
     }
     
     
@@ -666,11 +772,11 @@ public class LogEntry {
     
     
     /**
-     * Helper that calls {@link Listener#logEntryChanged(leeboardslog.data.LogEntry) } for
+     * Helper that calls {@link Listener#logEntryChanged(leeboardslog.data.LogEntry)  } for
      * each listener if the listeners have not been disabled.
      */
     protected void fireLogEntryChanged() {
-        if (this.listenerDisableCount <= 0) {
+        if ((this.listenerDisableCount <= 0) && !this.listeners.isEmpty()) {
             this.listeners.forEach((listener)-> {
                 listener.logEntryChanged(this);
             });

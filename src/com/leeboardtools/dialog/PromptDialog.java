@@ -16,6 +16,7 @@
 package com.leeboardtools.dialog;
 
 import com.leeboardtools.util.FxUtil;
+import com.leeboardtools.util.ResourceSource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -94,6 +97,15 @@ public class PromptDialog {
     private Stage stage;
     
     /**
+     * Some pre-defined button ids, they're only for convenience.
+     */
+    public static final int BTN_CANCEL      = 0;
+    public static final int BTN_OK          = 1;
+    public static final int BTN_YES         = 2;
+    public static final int BTN_NO          = 3;
+    
+    
+    /**
      * Constructor.
      */
     public PromptDialog() {
@@ -119,7 +131,7 @@ public class PromptDialog {
      * Adds a button. The button appears below any previously added buttons.
      * @param buttonText    The text for the button.
      * @param id The id associated with the button, if the button is chosen this
-     * is what is returned by {@link #showDialog() }.
+     * is what is returned by {@link #showOptionsDialog() }.
      */
     public void addButton(String buttonText, int id) {
         this.buttonEntries.add(new ButtonEntry(buttonText, id));
@@ -190,6 +202,32 @@ public class PromptDialog {
                 vBox.getChildren().add(button);
             }
         }
+        else if (node instanceof HBox) {
+            HBox hBox = (HBox)node;
+            hBox.getChildren().clear();
+
+            for (int i = 0; i < this.buttonEntries.size(); ++i) {
+                ButtonEntry entry = this.buttonEntries.get(i);
+                Button button = new Button(entry.text);
+                if (entry.id == this.cancelButtonId) {
+                    button.setCancelButton(true);
+                }
+                if (entry.id == this.defaultButtonId) {
+                    button.setDefaultButton(true);
+                }
+                button.setPrefWidth(60);
+                button.setMaxWidth(Double.MAX_VALUE);
+                button.getStyleClass().add(STYLE_BUTTON);
+                
+                button.setOnAction((e)-> {
+                    chosenButtonId = entry.id;
+                    stage.close();
+                });
+                
+                HBox.setHgrow(button, Priority.ALWAYS);
+                hBox.getChildren().add(button);
+            }
+        }
     }
     
     protected void showRoot(Parent root, Window ownerWindow) {
@@ -220,15 +258,10 @@ public class PromptDialog {
         this.stage.showAndWait();
     }
     
-    /**
-     * Displays the dialog box and waits for a button to be chosen.
-     * @param ownerWindow   The owner window, may be <code>null</code>
-     * @return The id of the chosen button.
-     */
-    public int showDialog(Window ownerWindow) {
+    protected int showDialog(Window ownerWindow, String fxmlName) {
         this.chosenButtonId = INVALID_BUTTON_ID;
         try {
-            Parent root = FXMLLoader.load(PromptDialog.class.getResource("PromptDialog.fxml"));
+            Parent root = FXMLLoader.load(PromptDialog.class.getResource(fxmlName));
             setupRoot(root);
             showRoot(root, ownerWindow);
         } catch (IOException ex) {
@@ -238,12 +271,67 @@ public class PromptDialog {
         return this.chosenButtonId;
     }
     
-    
     /**
-     * Displays the dialog box and waits for a button to be chosen.
+     * Displays the dialog box as an options choice dialog box and waits for a button to be chosen.
+     * @param ownerWindow   The owner window, may be <code>null</code>
      * @return The id of the chosen button.
      */
-    public int showDialog() {
-        return showDialog(null);
+    public int showOptionsDialog(Window ownerWindow) {
+        return showDialog(ownerWindow, "OptionsPromptDialog.fxml");
+    }
+    
+    
+    /**
+     * Displays the dialog box as an options choice dialog box and waits for a button to be chosen.
+     * @return The id of the chosen button.
+     */
+    public int showOptionsDialog() {
+        return showOptionsDialog(null);
+    }
+    
+    
+    /**
+     * Displays the dialog box as a simple prompt dialog box and waits for a button to be chosen.
+     * @param ownerWindow   The owner window, may be <code>null</code>
+     * @return The id of the chosen button.
+     */
+    public int showSimpleDialog(Window ownerWindow) {
+        return showDialog(ownerWindow, "SimplePromptDialog.fxml");
+    }
+    
+    
+    /**
+     * Displays the dialog box as a simple prompt dialog box and waits for a button to be chosen.
+     * @return The id of the chosen button.
+     */
+    public int showSimpleDialog() {
+        return showSimpleDialog(null);
+    }
+    
+
+    /**
+     * Helper that puts up a dialog box with just an OK button.
+     * @param ownerWindow   The owner window, may be <code>null</code>
+     * @param message   The message to display.
+     * @param title If not <code>null</code> the title for the window.
+     */
+    public static void showOKDialog(Window ownerWindow, String message, String title) {
+        PromptDialog dialog = new PromptDialog();
+        if (title != null) {
+            dialog.setTitle(title);
+        }
+        dialog.addMessage(message);
+        dialog.addButton(ResourceSource.getString("LB.Button.ok"), BTN_OK);
+        
+        dialog.showSimpleDialog(ownerWindow);
+    }
+
+    /**
+     * Helper that puts up a dialog box with just an OK button.
+     * @param message   The message to display.
+     * @param title If not <code>null</code> the title for the window.
+     */
+    public static void showOKDialog(String message, String title) {
+        showOKDialog(null, message, title);
     }
 }

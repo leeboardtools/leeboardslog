@@ -15,6 +15,7 @@
  */
 package leeboardslog.data;
 
+import com.leeboardtools.text.TextUtil;
 import com.leeboardtools.util.ChangeId;
 import com.leeboardtools.util.ResourceSource;
 import java.io.BufferedReader;
@@ -55,8 +56,8 @@ public class LogBookFile {
     
     public static final String PREF_IS_COMPRESS_FILE = "isCompressFile";
     
-    LogBook logBook = new LogBook();
-    final ChangeId.Tracker changeIdTracker = logBook.newChangeIdTracker();
+    final LogBook logBook;
+    final ChangeId.Tracker changeIdTracker;
 
     File file;
     
@@ -240,8 +241,8 @@ public class LogBookFile {
             Header header = new Header();
             header.version = VERSION_VALUE;
             
-            LogBookFile logBookFile = new LogBookFile(file, header);
-            if ((activeAuthor != null) && !activeAuthor.isEmpty()) {
+            LogBookFile logBookFile = new LogBookFile(file, header, new LogBook());
+            if (TextUtil.isAnyText(activeAuthor)) {
                 logBookFile.getLogBook().setActiveAuthor(activeAuthor);
             }
             logBookFile.updateFile();
@@ -284,9 +285,9 @@ public class LogBookFile {
                 throw new FileException(FileExceptionReason.INVALID_FORMAT, fileName, message);
             }
             
-            LogBookFile logBookFile = new LogBookFile(file, header);
-            logBookFile.logBook = LogBook.fromJSON(logBookJSONObject);
-            if ((activeAuthor != null) && !activeAuthor.isEmpty()) {
+            LogBook logBook = LogBook.fromJSON(logBookJSONObject);
+            LogBookFile logBookFile = new LogBookFile(file, header, logBook);
+            if (TextUtil.isAnyText(activeAuthor)) {
                 logBookFile.logBook.setActiveAuthor(activeAuthor);
             }
             return logBookFile;
@@ -311,9 +312,11 @@ public class LogBookFile {
     }
     
     
-    protected LogBookFile(File file, Header header) {
+    protected LogBookFile(File file, Header header, LogBook logBook) {
         this.file = file;
         this.header = header;
+        this.logBook = (logBook == null) ? new LogBook() : logBook;
+        this.changeIdTracker = this.logBook.newChangeIdTracker();
     }
     
     
@@ -334,7 +337,7 @@ public class LogBookFile {
     
     
     /**
-     * @return The log book the file represents.
+     * @return The log book the file represents. The file always represents the same log book.
      */
     public final LogBook getLogBook() {
         return this.logBook;

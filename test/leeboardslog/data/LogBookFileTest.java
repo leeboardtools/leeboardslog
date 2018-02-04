@@ -168,7 +168,7 @@ public class LogBookFileTest {
                 LocalDateTime.of(2017, 12, 21, 12, 30), LocalDateTime.of(2018, 1, 2, 3, 4), zoneId),
                 zoneId);
         logBook.addLogEntry(entryA);
-        entryA.setContentHTMLBodyText("<p>Hello</p>");
+        entryA.setBody(entryA.getBodyFormat(), "<p>Hello</p>");
 
         LogEntry entryB = new LogEntry(null, TimePeriod.fromEdgeTimes(
                 LocalDateTime.of(2017, 10, 21, 12, 30), LocalDateTime.of(2017, 11, 2, 3, 4), zoneId),
@@ -184,7 +184,7 @@ public class LogBookFileTest {
             assertEquals(logBook, testLogBookFile.getLogBook());
         }
         
-        entryB.setContentHTMLBodyText("<p>Good-bye</p>");
+        entryB.setBody(entryA.getBodyFormat(), "<p>Good-bye</p>");
         assertTrue(refLogBookFile.isLogBookChanged());
         
         refLogBookFile.updateFile();

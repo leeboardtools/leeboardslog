@@ -85,6 +85,14 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
                 monthlyView.setActiveDate(monthlyView.getActiveDate().plusDays(7 * NUMBER_DAY_CELL_ROWS));
                 monthlyView.makeDateInFirstRow(firstVisibleDate.plusDays(deltaDays));
                 break;
+            
+            case ENTER :
+            case SPACE :
+                if (!monthlyView.isEditing()) {
+                    monthlyView.startEdit();
+                }
+                break;
+                
             default :
                 return;
         }
@@ -161,6 +169,13 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
         });
         
         updateDatesDisplayed();
+        
+        control.setSkinCallback(new MonthlyView.SkinCallback<T>() {
+            @Override
+            public void reloadDayRange(MonthlyView<T> view, int fromIndex, int toIndex) {
+                updateDisplayedDates(fromIndex, toIndex);
+            }
+        });
     }
     
     final Node createDayOfWeekNode(DayOfWeek dayOfWeek) {
@@ -190,42 +205,59 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
     }
     
     protected final void updateDatesDisplayed() {
+        updateDisplayedDates(0, dayCells.length - 1);
+    }
+    
+    protected final void updateDisplayedDates(int fromIndex, int toIndex) {
         MonthlyView control = getSkinnable();
         LocalDate date = control.getFirstVisibleDate();
         LocalDate today = LocalDate.now();
         LocalDate activeDate = control.getActiveDate();
         YearMonth activeYearMonth = YearMonth.from(activeDate);
         
-        int cellIndex = 0;
-        for (int i = 0; i < 7; ++i) {
-            for (int row = 0; row < NUMBER_DAY_CELL_ROWS; ++row) {
-                DayCell<T> dayCell = dayCells[cellIndex];
-                
-                // Using setAll() because we want to clear all the styles...
-                dayCell.getStyleClass().setAll("day-cell", "cell");
-                
-                YearMonth yearMonth = YearMonth.from(date);
-                if (yearMonth.isBefore(activeYearMonth)) {
-                    dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.BEFORE);
-                }
-                else if (yearMonth.isAfter(activeYearMonth)) {
-                    dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.AFTER);
-                }
-                else {
-                    dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.SAME);
-                }
-                
-                dayCells[cellIndex].updateItem(date, false);
-                
-                dayCell.setIsToday(today.equals(date));
-                
-                // updateSelected() has to be called after updateItem() because it doesn't
-                // do anything if the cell is empty (the initial state).
-                dayCell.updateSelected(date.equals(activeDate));
-                
-                ++cellIndex;
-                date = date.plusDays(1);
+        boolean isFullUpdate = (fromIndex <= 0) && ((toIndex + 1) >= dayCells.length);
+        
+        if (fromIndex < 0) {
+            fromIndex = 0;
+        }
+        if (fromIndex > 0) {
+            date = date.plusDays(fromIndex);
+        }
+        
+        if (toIndex >= dayCells.length) {
+            toIndex = dayCells.length - 1;
+        }
+        
+        for (int cellIndex = fromIndex; cellIndex <= toIndex; ++cellIndex) {
+            DayCell<T> dayCell = dayCells[cellIndex];
+
+            // Using setAll() because we want to clear all the styles...
+            dayCell.getStyleClass().setAll("day-cell", "cell");
+
+            YearMonth yearMonth = YearMonth.from(date);
+            if (yearMonth.isBefore(activeYearMonth)) {
+                dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.BEFORE);
             }
+            else if (yearMonth.isAfter(activeYearMonth)) {
+                dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.AFTER);
+            }
+            else {
+                dayCell.setActiveMonthRelation(DayCell.ActiveMonthRelation.SAME);
+            }
+
+            if (!isFullUpdate) {
+                // This forces the contents of the day cell to be updated.
+                dayCells[cellIndex].updateItem(null, false);
+            }
+            dayCells[cellIndex].updateItem(date, false);
+
+            dayCell.setIsToday(today.equals(date));
+
+            // updateSelected() has to be called after updateItem() because it doesn't
+            // do anything if the cell is empty (the initial state).
+            dayCell.updateSelected(date.equals(activeDate));
+
+            date = date.plusDays(1);
         }
     }
     

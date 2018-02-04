@@ -435,11 +435,13 @@ public class LogBook {
      */
     private class EntryMaster implements LogEntry.Listener {
         final LogEntry logEntry;
+        final LogEntry oldLogEntryValues;
         LogEntry.TimePeriodKey timePeriodKey;
         final Set<LocalDate> localDates = new HashSet<>();
         
         EntryMaster(LogEntry logEntry) {
             this.logEntry = logEntry;
+            this.oldLogEntryValues = new LogEntry(logEntry.getGuid(), logEntry.getTimePeriod(), logEntry.getZoneId());
             this.timePeriodKey = new LogEntry.TimePeriodKey(logEntry);
             this.timePeriodKey.timePeriod.getDates(this.localDates, getCurrentZoneId());
         }
@@ -464,13 +466,18 @@ public class LogBook {
         if (!entryMaster.timePeriodKey.timePeriod.equals(logEntry.getTimePeriod())) {
             removeEntryMaster(entryMaster);
             entryMaster.timePeriodKey = new LogEntry.TimePeriodKey(logEntry);
+            entryMaster.localDates.clear();
+            entryMaster.timePeriodKey.timePeriod.getDates(entryMaster.localDates, getCurrentZoneId());
             addEntryMaster(entryMaster);
         }
         
         this.listeners.forEach((listener)-> {
-            listener.entryModified(this, logEntry);
+            listener.entryModified(this, logEntry, entryMaster.oldLogEntryValues);
         });
+        
+        entryMaster.oldLogEntryValues.copyFrom(logEntry);
     }
+    
     
     private void addEntryMaster(EntryMaster entryMaster) {
         this.entriesByStart.put(entryMaster.timePeriodKey, entryMaster);
@@ -480,9 +487,14 @@ public class LogBook {
             DayLogEntries dayLogEntries = this.entriesByDate.get(date);
             if (dayLogEntries == null) {
                 dayLogEntries = new DayLogEntries(date);
+                // Need to add the log entries to dayLogEntries before adding the dayLogEntries
+                // to entriesByDate in case entriesByDate has listeners.
+                dayLogEntries.logEntries.add(entryMaster.logEntry);
                 this.entriesByDate.put(date, dayLogEntries);
             }
-            dayLogEntries.logEntries.add(entryMaster.logEntry);
+            else {
+                dayLogEntries.logEntries.add(entryMaster.logEntry);
+            }
         });
     }
     
@@ -635,9 +647,10 @@ public class LogBook {
         /**
          * Called whenever a {@link LogEntry} object in the book is modified.
          * @param logBook   The log book calling this.
-         * @param entry The entry that was modified.
+         * @param logEntry The entry that was modified.
+         * @param oldLogEntryValues A log entry that contains the pre-modification values.
          */
-        default public void entryModified(LogBook logBook, LogEntry entry) {
+        default public void entryModified(LogBook logBook, LogEntry logEntry, LogEntry oldLogEntryValues) {
         }
     }
     

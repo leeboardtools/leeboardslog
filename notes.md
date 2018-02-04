@@ -1,4 +1,8 @@
 # TODO
+    - Continue with LogBookViewController.onEditStart(), onEditCommit(), onEditCancel() (can
+        probably ignore onEditCommit())
+      Add primary LogEntryView to LogBookEditor.
+
     - Update LogBookEditor/LogBookFile to support creating a backup at the start of the session
         and then not create a backup after that.
 
@@ -59,6 +63,32 @@ Main Concepts:
         - View Style
         - Open Log Entry editors
         - Preferences?
+
+
+- MonthlyView:
+    - Click on day:
+        - If day is active, then start editing.
+        - Otherwise make day active.
+    - Enter key: Start editing.
+    - Esc key: Cancel editing?
+    - Editing performed by the DayCell? Or just fire an ActionEvent?
+
+    - If DayCell does editing:
+        - startEdit() will fire a start edit event.
+        - commitEdit() will fire a commit edit event.
+        - cancelEdit() will fire a cancel edit event.
+
+        How will these be handled by the LogBook?
+            LogBookEditor will keep track of a primary LogEntryView.
+            The primary LogEntryView can be pinned as a separate view.
+            The active LogEntryView will be associated with the active cell.
+            If the active date is changed after the LogEntryView's contents have
+            been modified, will need to prompt to save/discard/cancel before activating
+            the new active date.
+            
+            LogBookEditor will therefore process any startEdit() events IF the active
+            LogEntryView is not open.
+
 
 QuickListView:
     - Limited size list option.

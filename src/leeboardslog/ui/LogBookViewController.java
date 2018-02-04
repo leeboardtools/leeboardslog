@@ -29,11 +29,11 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
-import leeboardslog.LeeboardsLog;
 import leeboardslog.data.DayLogEntries;
 import com.leeboardtools.util.ListConverter;
 import com.leeboardtools.util.TimePeriod;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
 import javafx.event.ActionEvent;
@@ -43,6 +43,7 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import leeboardslog.data.LogBook;
+import leeboardslog.data.LogEntry;
 
 
 /**
@@ -108,12 +109,7 @@ public class LogBookViewController implements Initializable {
 
     @FXML
     private void onNewLogEntry(ActionEvent event) {
-        LogBook logBook = this.logBookEditor.getLogBook();
-        if (logBook != null) {
-            TimePeriod timePeriod = TimePeriod.fromEdgeDates(activeDate.get(), activeDate.get(), logBook.getCurrentZoneId());
-            LogEntryView view = this.logBookEditor.getViewForNewLogEntry(timePeriod);
-            view.showView();
-        }
+        newLogEntry();
     }
 
     @FXML
@@ -133,6 +129,46 @@ public class LogBookViewController implements Initializable {
 
     @FXML
     private void onSettings(ActionEvent event) {
+    }
+    
+    
+    private void newLogEntry() {
+        LogBook logBook = this.logBookEditor.getLogBook();
+        if (logBook != null) {
+            // TODO: Close the primary log entry view...
+            TimePeriod timePeriod = TimePeriod.fromEdgeDates(activeDate.get(), activeDate.get(), logBook.getCurrentZoneId());
+            LogEntryView view = this.logBookEditor.getViewForNewLogEntry(timePeriod);
+            view.showView();
+        }
+    }
+    
+    
+    private void onEditStart(MonthlyView.EditEvent<DayLogEntries> event) {
+        LogBook logBook = this.logBookEditor.getLogBook();
+        if (logBook != null) {
+            LocalDate date = this.activeDate.get();
+            List<LogEntry> logEntries = new ArrayList<>();
+            logBook.getLogEntriesWithDate(date, logEntries);
+            if (logEntries.isEmpty()) {
+                newLogEntry();
+            }
+            else if (logEntries.size() == 1) {
+                LogEntryView view = this.logBookEditor.getLogEntryView(logEntries.get(0).getGuid());
+                view.showView();
+            }
+            else {
+                // TODO: Need to select which entry to open...
+            }
+            
+            // We're going to go ahead and cancel the edit mode since we're not modal..
+            this.monthlyViewControl.cancelEdit();
+        }
+    }
+    
+    private void onEditCommit(MonthlyView.EditEvent<DayLogEntries> event) {
+    }
+    
+    private void onEditCancel(MonthlyView.EditEvent<DayLogEntries> event) {
     }
     
     
@@ -198,21 +234,16 @@ public class LogBookViewController implements Initializable {
             this.monthlyViewControl.setActiveDate(newValue);
         });
         this.monthlyViewControl.setActiveDate(getActiveDate());
+        this.monthlyViewControl.setOnEditStart((event)-> {
+            onEditStart(event);
+        });
+        this.monthlyViewControl.setOnEditCommit((event)-> {
+            onEditCommit(event);
+        });
+        this.monthlyViewControl.setOnEditCancel((event)-> {
+            onEditCancel(event);
+        });
         
-        
-        //
-        // Log Book Editor...
-        this.logBookEditor = LeeboardsLog.getLogBookEditor();
-        if (this.logBookEditor != null) {
-            this.logBookEditor.logBookFileProperty().addListener(((observable, oldValue, newValue) -> {
-                if (newValue != null) {
-                    this.monthlyViewControl.setItems(newValue.getLogBook().getEntriesByDate());
-                }
-            }));
-            if (this.logBookEditor.getLogBookFile() != null) {
-                this.monthlyViewControl.setItems(this.logBookEditor.getLogBookFile().getLogBook().getEntriesByDate());
-            }
-        }
         
         this.activeViewType.addListener((property, oldValue, newValue) -> {
             boolean isMonthly = false;
@@ -248,23 +279,88 @@ public class LogBookViewController implements Initializable {
     }
     
     
+    
+    private final LogBook.Listener logBookListener = new LogBook.Listener() {
+        @Override
+        public void entriesAdded(LogBook logBook, Collection<LogEntry> logEntries) {
+            updateFromLogEntries();
+        }
+
+        @Override
+        public void entriesRemoved(LogBook logBook, Collection<LogEntry> logEntries) {
+            updateFromLogEntries();
+        }
+
+        @Override
+        public void entryModified(LogBook logBook, LogEntry logEntry, LogEntry oldLogEntryValues) {
+            if (!logEntry.getTimePeriod().equals(oldLogEntryValues.getTimePeriod())) {
+                // We need a full refresh because we need to reload the log entry list..
+                updateFromLogEntries();
+            }
+            else {
+                updateFromChangedLogEntry(logEntry);
+            }
+        }
+        
+    };
+    
+    
     void setLogBookEditor(LogBookEditor logBookEditor) {
         if (this.logBookEditor != logBookEditor) {
+            
             this.logBookEditor = logBookEditor;
             
             if (this.logBookEditor != null) {
                 this.logBookEditor.logBookFileProperty().addListener(((observable, oldValue, newValue) -> {
-                    if (newValue != null) {
-                        this.monthlyViewControl.setItems(newValue.getLogBook().getEntriesByDate());
+                    if (oldValue != null) {
+                        // Remove our listener for the log book changes.
+                        if (oldValue.getLogBook() != null) {
+                            oldValue.getLogBook().removeListener(logBookListener);
+                        }
                     }
+                    
+                    if (newValue != null) {
+                        if (newValue.getLogBook() != null) {
+                            newValue.getLogBook().addListener(logBookListener);
+                        }
+                    }
+                    updateFromLogEntries();
                 }));
-                if (this.logBookEditor.getLogBookFile() != null) {
-                    this.monthlyViewControl.setItems(this.logBookEditor.getLogBookFile().getLogBook().getEntriesByDate());
+                
+                if (this.logBookEditor.getLogBook() != null) {
+                    this.logBookEditor.getLogBook().addListener(logBookListener);
                 }
+                updateFromLogEntries();
             }
         }
     }
     
+    void updateFromLogEntries() {
+        LogBook logBook = null;
+        if (this.logBookEditor != null) {
+            logBook = this.logBookEditor.getLogBook();
+        }
+        if (logBook != null) {
+            if (this.monthlyViewControl != null) {
+                this.monthlyViewControl.setItems(logBook.getEntriesByDate());
+            }
+        }
+    }
+    
+    void updateFromChangedLogEntry(LogEntry logEntry) {
+        LogBook logBook = null;
+        if (this.logBookEditor != null) {
+            logBook = this.logBookEditor.getLogBook();
+        }
+        if (logBook != null) {
+            LocalDate startDate = logEntry.getTimePeriod().getLocalStartDate(logBook.getCurrentZoneId());
+            LocalDate endDate = logEntry.getTimePeriod().getAdjustedLocalEndDate(logBook.getCurrentZoneId());
+            
+            if (this.monthlyViewControl != null) {
+                this.monthlyViewControl.reloadDateRange(startDate, endDate);
+            }
+        }        
+    }
     
     void updateLogEntriesMenu() {
         // Want to delete everything after the logEntryViewsSeparator in logEntriesMenu.

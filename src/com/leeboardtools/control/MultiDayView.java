@@ -27,6 +27,14 @@ import javafx.scene.control.Cell;
 import javafx.scene.control.Control;
 import javafx.util.Callback;
 import com.leeboardtools.util.ListConverter;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.MapChangeListener;
+import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.event.EventType;
 
 /**
  * Base class for views that display data associated with multiple days.
@@ -51,6 +59,51 @@ public abstract class MultiDayView <T> extends Control {
         items.set(value);
     }
     
+    private final MapChangeListener<LocalDate, T> itemsListener = (MapChangeListener.Change<? extends LocalDate, ? extends T> change) -> {
+        reloadDate(change.getKey());
+    };
+    
+    
+    /**
+     * Reloads the days within two dates, inclusive.
+     * @param dateA The first date.
+     * @param dateB The second date.
+     * @return <code>true</code> if any visible dates were reloaded.
+     */
+    public boolean reloadDateRange(LocalDate dateA, LocalDate dateB) {
+        if (dateA.isAfter(dateB)) {
+            LocalDate tmp = dateA;
+            dateA = dateB;
+            dateB = tmp;
+        }
+        
+        final LocalDate firstVisDate = this.firstVisibleDate.get();
+        final LocalDate lastVisDate = this.lastVisibleDate.get();
+        if (dateA.isAfter(lastVisDate) || dateB.isBefore(firstVisDate)) {
+            return false;
+        }
+
+        if (dateA.isBefore(firstVisDate)) {
+            dateA = firstVisDate;
+        }
+        if (dateB.isAfter(lastVisDate)) {
+            dateB = lastVisDate;
+        }
+        
+        doDateRangeReload(dateA, dateB);
+        return true;
+    }
+    
+    /**
+     * Reloads a date.
+     * @param date The date of interest.
+     * @return <code>true</code> if the date was visible.
+     */
+    public boolean reloadDate(LocalDate date) {
+        return reloadDateRange(date, date);
+    }
+    
+    protected abstract void doDateRangeReload(LocalDate fromDate, LocalDate toDate);
     
     /**
      * Defines an optional factory callback for creating the cells representing the
@@ -233,6 +286,18 @@ public abstract class MultiDayView <T> extends Control {
     }
     
     
+    /**
+     * Determines if a date is currently visible.
+     * @param date  The date of interest.
+     * @return <code>true</code> if date is visible (between firstVisibleDate and lastVisibleDate, inclusive).
+     */
+    public final boolean isDateVisible(LocalDate date) {
+        if ((firstVisibleDate.get() == null) || (lastVisibleDate.get() == null) || (date == null)) {
+            return false;
+        }
+        return !firstVisibleDate.get().isAfter(date) && !lastVisibleDate.get().isBefore(date);
+    }
+    
     
     /**
      * Defines the active date within the view. The active date is normally highlighted,
@@ -251,4 +316,208 @@ public abstract class MultiDayView <T> extends Control {
     }
     
     
+    /**
+     * Determines if the view is potentially editable.
+     */
+    final BooleanProperty editable = new SimpleBooleanProperty(this, "editable");
+    
+    public final BooleanProperty editableProperty() {
+        return editable;
+    }
+    public final boolean isEditable() {
+        return editable.get();
+    }
+    public final void setEditable(boolean value) {
+        editable.set(value);
+    }
+    
+    
+    /**
+     * Read-only property that's <code>true</code> if the active cell is currently being edited.
+     */
+    final ReadOnlyBooleanWrapper editing = new ReadOnlyBooleanWrapper(this, "editing", false);
+    
+    public final ReadOnlyBooleanProperty editingProperty() {
+        return editing.getReadOnlyProperty();
+    }
+    public final boolean isEditing() {
+        return editing.get();
+    }
+    
+    
+    private LocalDate editingDate;
+    
+    protected MultiDayView() {
+        this.activeDate.addListener((property, oldValue, newValue) -> {
+            cancelEdit();
+        });
+        
+        this.items.addListener((property, oldValue, newValue) -> {
+            if (oldValue != null) {
+                oldValue.removeListener(itemsListener);
+            }
+            if (newValue != null) {
+                newValue.addListener(itemsListener);
+            }
+        });
+    }
+    
+    
+    /**
+     * Event used for the edit related events in MultiDayViews.
+     * @param <T> The object type from the MultiDayView.
+     */
+    public static class EditEvent <T> extends Event {
+        private final LocalDate editDate;
+        private final T newValue;
+        
+        public EditEvent(MultiDayView<T> source, EventType<? extends MultiDayView.EditEvent<T>> eventType,
+                LocalDate editDate, T newValue) {
+            super(source, Event.NULL_SOURCE_TARGET, eventType);
+            this.editDate = editDate;
+            this.newValue = newValue;
+        }
+
+        @Override
+        public MultiDayView<T> getSource() {
+            return (MultiDayView<T>)super.getSource();
+        }
+        
+        public final LocalDate getEditDate() {
+            return editDate;
+        }
+        
+        public final T getNewValue() {
+            return newValue;
+        }
+    }
+    
+    private static final EventType<?> EDIT_ANY_EVENT = new EventType(Event.ANY, "MULTI_DAY_VIEW_EDIT");
+    public static final <T> EventType<EditEvent<T>> editAnyEventType() {
+        return (EventType<EditEvent<T>>)EDIT_ANY_EVENT;
+    }
+    
+    private static final EventType<?> EDIT_START_EVENT = new EventType(EDIT_ANY_EVENT, "EDIT_START");
+    public static final <T> EventType<EditEvent<T>> editStartEventType() {
+        return (EventType<EditEvent<T>>)EDIT_START_EVENT;
+    }
+    
+    private static final EventType<?> EDIT_COMMIT_EVENT = new EventType(EDIT_ANY_EVENT, "EDIT_COMMIT");
+    public static final <T> EventType<EditEvent<T>> editCommitEventType() {
+        return (EventType<EditEvent<T>>)EDIT_COMMIT_EVENT;
+    }
+    
+    private static final EventType<?> EDIT_CANCEL_EVENT = new EventType(EDIT_ANY_EVENT, "EDIT_CANCEL");
+    public static final <T> EventType<EditEvent<T>> editCancelEventType() {
+        return (EventType<EditEvent<T>>)EDIT_CANCEL_EVENT;
+    }
+    
+    
+    /**
+     * Starts editing of the item with the active date.
+     */
+    public void startEdit() {
+        if (isEditing()) {
+            return;
+        }
+        
+        this.editingDate = this.activeDate.get();
+        this.editing.set(true);
+        fireEvent(new EditEvent(this, editStartEventType(), this.editingDate, null));
+    }
+    
+    public void commitEdit(T newItem) {
+        if (!isEditing()) {
+            return;
+        }
+        
+        LocalDate date = this.editingDate;
+        this.editingDate = null;
+        this.editing.set(false);
+        fireEvent(new EditEvent(this, editCommitEventType(), date, newItem));
+    }
+    
+    public void cancelEdit() {
+        if (!isEditing()) {
+            return;
+        }
+        
+        LocalDate date = this.editingDate;
+        this.editingDate = null;
+        this.editing.set(false);
+        fireEvent(new EditEvent(this, editCancelEventType(), date, null));
+    }
+    
+    
+    
+    /**
+     * Event handler fired when editing is started on the active date.
+     */
+    private ObjectProperty<EventHandler<EditEvent<T>>> onEditStart;
+    
+    public final ObjectProperty<EventHandler<EditEvent<T>>> onEditStartProperty() {
+        if (onEditStart == null) {
+            onEditStart = new SimpleObjectProperty<EventHandler<EditEvent<T>>>(this, "onEditStart", null) {
+                @Override 
+                protected void invalidated() {
+                    setEventHandler(editStartEventType(), get());
+                }
+            };
+        }
+        return onEditStart;
+    }
+    public final EventHandler<EditEvent<T>> getOnEditStart() {
+        return (onEditStart == null) ? null : onEditStart.get();
+    }
+    public final void setOnEditStart(EventHandler<EditEvent<T>> handler) {
+        onEditStartProperty().set(handler);
+    }
+    
+    
+    /**
+     * Event handler fired when editing is committed on the active date.
+     */
+    private ObjectProperty<EventHandler<EditEvent<T>>> onEditCommit;
+    
+    public final ObjectProperty<EventHandler<EditEvent<T>>> onEditCommitProperty() {
+        if (onEditCommit == null) {
+            onEditCommit = new SimpleObjectProperty<EventHandler<EditEvent<T>>>(this, "onEditCommit", null) {
+                @Override 
+                protected void invalidated() {
+                    setEventHandler(editCommitEventType(), get());
+                }
+            };
+        }
+        return onEditCommit;
+    }
+    public final EventHandler<EditEvent<T>> getOnEditCommit() {
+        return (onEditCommit == null) ? null : onEditCommit.get();
+    }
+    public final void setOnEditCommit(EventHandler<EditEvent<T>> handler) {
+        onEditCommitProperty().set(handler);
+    }
+    
+    
+    /**
+     * Event handler fired when editing is canceled on the active date.
+     */
+    private ObjectProperty<EventHandler<EditEvent<T>>> onEditCancel;
+    
+    public final ObjectProperty<EventHandler<EditEvent<T>>> onEditCancelProperty() {
+        if (onEditCancel == null) {
+            onEditCancel = new SimpleObjectProperty<EventHandler<EditEvent<T>>>(this, "onEditCancel", null) {
+                @Override 
+                protected void invalidated() {
+                    setEventHandler(editCancelEventType(), get());
+                }
+            };
+        }
+        return onEditCancel;
+    }
+    public final EventHandler<EditEvent<T>> getOnEditCancel() {
+        return (onEditCancel == null) ? null : onEditCancel.get();
+    }
+    public final void setOnEditCancel(EventHandler<EditEvent<T>> handler) {
+        onEditCancelProperty().set(handler);
+    }
 }

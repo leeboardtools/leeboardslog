@@ -19,6 +19,7 @@ import com.leeboardtools.control.skin.MonthlyViewSkin;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableMap;
@@ -70,15 +71,6 @@ public class MonthlyView <T> extends MultiDayView<T> {
     }
     
 
-    // TODO DayOfWeekCell - use DayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault());
-    // TODO DateCell - VBox containing a Label and a ListView..
-    
-    // TODO Wheel: Scrolls by week.
-    // TODO setMonth(Month, Year)
-    // TODO showDate(LocalDate)
-    // TODO selectedDate? Look into JavaFX selection model.
-    // TODO look into CSS styling, how to apply it to the control.
-    
     public MonthlyView() {
         getStyleClass().add(DEFAULT_STYLE_CLASS);
         
@@ -98,7 +90,15 @@ public class MonthlyView <T> extends MultiDayView<T> {
     protected Skin<?> createDefaultSkin() {
         return new MonthlyViewSkin<>(this);
     }
-    
+
+    @Override    
+    public void doDateRangeReload(LocalDate fromDate, LocalDate toDate) {
+        if (this.skinCallback != null) {
+            int fromIndex = getDateCellIndex(fromDate);
+            int toIndex = getDateCellIndex(toDate);
+            this.skinCallback.reloadDayRange(this, fromIndex, toIndex);
+        }
+    }
     
     protected void firstDayOfWeekUpdated() {
         DayOfWeek dayOfWeek = getFirstDayOfWeek();
@@ -185,15 +185,31 @@ public class MonthlyView <T> extends MultiDayView<T> {
     public final LocalDate getDateOfCell(int columnIndex, int rowIndex) {
         return this.firstVisibleDate.get().plusDays(rowIndex * 7 + columnIndex);
     }
-
+    
     /**
-     * Determines if a date is currently visible in the grid.
+     * Retrieves the index of the cell containing a given date.
      * @param date  The date of interest.
-     * @return <code>true</code> if date is visible.
+     * @return The index, -1 if the date is not visible.
      */
-    public final boolean isDateVisible(LocalDate date) {
-        return !date.isBefore(firstVisibleDate.get()) && !date.isAfter(lastVisibleDate.get());
+    protected final int getDateCellIndex(LocalDate date) {
+        if (!isDateVisible(date)) {
+            return -1;
+        }
+        
+        return (int) this.firstVisibleDate.get().until(date, ChronoUnit.DAYS);
     }
     
     
+    public interface SkinCallback<T> {
+        void reloadDayRange(MonthlyView<T> view, int fromIndex, int toIndex);
+    }
+    
+    protected SkinCallback<T> skinCallback;
+    
+    public void setSkinCallback(SkinCallback<T> callback) {
+        this.skinCallback = callback;
+    }
+    public final SkinCallback<T> getSkinCallback() {
+        return this.skinCallback;
+    }
 }

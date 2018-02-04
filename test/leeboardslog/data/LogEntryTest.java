@@ -375,7 +375,8 @@ public class LogEntryTest {
         refLogEntry.getTags().add("Tag A");
         refLogEntry.getTags().add("Tag B");
         
-        refLogEntry.setContentHTMLBodyText("<html>"
+        refLogEntry.setBody(refLogEntry.getBodyFormat(), 
+                "<html>"
                 + "<p>Paragraph 1</p>"
                 + "<p>Paragraph 2</p>");
         
@@ -385,7 +386,7 @@ public class LogEntryTest {
         LogEntry testLogEntry = LogEntry.fromJSON(jsonObject);
         assertEquals(refLogEntry, testLogEntry);
         
-        refLogEntry.setContentHTMLBodyText("");
+        refLogEntry.setBody(refLogEntry.getBodyFormat(), "");
         assertNotEquals(refLogEntry, testLogEntry);
 
         jsonObject = refLogEntry.toJSONObject();

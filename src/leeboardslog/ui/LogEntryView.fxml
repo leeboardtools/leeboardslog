@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
 <?import java.lang.*?>
 <?import java.util.*?>
@@ -7,28 +8,46 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="200.0" minWidth="700.0" prefHeight="400.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="leeboardslog.ui.LogEntryViewController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="200.0" minWidth="700.0" prefHeight="400.0" prefWidth="755.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="leeboardslog.ui.LogEntryViewController">
    <top>
       <VBox BorderPane.alignment="CENTER">
          <children>
             <BorderPane>
-               <right>
-                  <Button mnemonicParsing="false" onAction="#onSave" text="Save" BorderPane.alignment="CENTER">
-                     <BorderPane.margin>
-                        <Insets left="2.0" right="2.0" />
-                     </BorderPane.margin>
-                  </Button>
-               </right>
                <center>
                   <TextField fx:id="titleEditor" promptText="Title" BorderPane.alignment="CENTER">
                      <BorderPane.margin>
                         <Insets left="2.0" right="2.0" />
                      </BorderPane.margin>
+                     <font>
+                        <Font size="11.0" />
+                     </font>
                   </TextField>
                </center>
                <VBox.margin>
                   <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                </VBox.margin>
+               <right>
+                  <HBox BorderPane.alignment="CENTER">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#onSave" prefWidth="55.0" text="Save">
+                           <HBox.margin>
+                              <Insets left="2.0" right="2.0" />
+                           </HBox.margin>
+                           <font>
+                              <Font size="11.0" />
+                           </font>
+                        </Button>
+                        <Button mnemonicParsing="false" onAction="#onDelete" prefHeight="22.0" prefWidth="55.0" text="Delete">
+                           <HBox.margin>
+                              <Insets left="2.0" right="2.0" />
+                           </HBox.margin>
+                           <font>
+                              <Font size="11.0" />
+                           </font>
+                        </Button>
+                     </children>
+                  </HBox>
+               </right>
             </BorderPane>
             <BorderPane>
                <center>
@@ -50,7 +69,7 @@
                         <Label text=" to " />
                         <DatePicker fx:id="endDatePicker" prefWidth="120.0" />
                         <ComboBox fx:id="endTimePicker" editable="true" prefWidth="120.0" promptText="11:00 am" />
-                        <ChoiceBox fx:id="timeZonePicker" prefWidth="150.0">
+                        <ChoiceBox fx:id="timeZonePicker" prefHeight="25.0" prefWidth="252.0">
                            <HBox.margin>
                               <Insets left="4.0" right="2.0" />
                            </HBox.margin>
@@ -70,6 +89,9 @@
                            <HBox.margin>
                               <Insets left="2.0" right="2.0" />
                            </HBox.margin>
+                           <font>
+                              <Font size="11.0" />
+                           </font>
                         </Label>
                         <ComboBox fx:id="levelPicker" prefWidth="100.0">
                            <HBox.margin>
@@ -86,11 +108,17 @@
                            <HBox.margin>
                               <Insets left="2.0" right="2.0" />
                            </HBox.margin>
+                           <font>
+                              <Font size="11.0" />
+                           </font>
                         </Label>
-                        <TextField fx:id="tagsEditor" HBox.hgrow="ALWAYS">
+                        <TextField fx:id="tagsEditor" promptText="Tags separated by commas" HBox.hgrow="ALWAYS">
                            <HBox.margin>
                               <Insets left="2.0" right="2.0" />
                            </HBox.margin>
+                           <font>
+                              <Font size="11.0" />
+                           </font>
                         </TextField>
                      </children>
                      <BorderPane.margin>

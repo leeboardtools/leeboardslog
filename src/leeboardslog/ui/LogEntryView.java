@@ -15,8 +15,11 @@
  */
 package leeboardslog.ui;
 
-import com.leeboardtools.util.ChangeId;
+import com.leeboardtools.dialog.PromptDialog;
+import com.leeboardtools.text.TextUtil;
+import com.leeboardtools.util.ResourceSource;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -38,6 +41,7 @@ public class LogEntryView {
     private LogBookEditor logBookEditor;
     private boolean isChanged = false;
     private Stage viewStage;
+    private LogEntryViewController viewController;
     private final List<Listener> listeners = new ArrayList<>();
     
     
@@ -71,7 +75,11 @@ public class LogEntryView {
      * to be saved.
      */
     public boolean isChanges() {
-        return isChanged;
+        if (this.viewController != null) {
+            this.viewController.updateLogEntryFromControls();
+        }
+        
+        return isChanged  && !this.logEntry.equals(this.workingLogEntry);
     }
     
     /**
@@ -91,11 +99,35 @@ public class LogEntryView {
      * changes and the user canceled saving changes.
      */
     public boolean safeCloseView() {
+        boolean saveChanges = false;
+        
         if (isChanges()) {
-            // TODO: Prompt to save the changes.
+            PromptDialog promptDialog = new PromptDialog();
+            promptDialog.setTitle(ResourceSource.getString("Title.saveChanges"));
+
+            promptDialog.addMessage(ResourceSource.getString("Prompt.saveLogEntryChanges"));
+
+            promptDialog.addButton(ResourceSource.getString("Button.yes"), PromptDialog.BTN_YES);
+            promptDialog.addButton(ResourceSource.getString("Button.no"), PromptDialog.BTN_NO);
+            promptDialog.addButton(ResourceSource.getString("Button.cancel"), PromptDialog.BTN_CANCEL);
+            promptDialog.setDefaultButtonId(PromptDialog.BTN_YES);
+            promptDialog.setCancelButtonId(PromptDialog.BTN_CANCEL);
+
+            switch (promptDialog.showSimpleDialog(this.viewStage)) {
+                case PromptDialog.BTN_YES :
+                    saveChanges = true;
+                    break;
+                    
+                case PromptDialog.BTN_NO :
+                    saveChanges = false;
+                    break;
+
+                case PromptDialog.BTN_CANCEL :
+                    return false;
+            }
         }
         
-        closeView(true);
+        closeView(saveChanges);
         return true;
     }
     
@@ -105,7 +137,12 @@ public class LogEntryView {
      */
     public void closeView(boolean saveChanges) {
         if (saveChanges) {
-            saveChanges();
+            if (!this.workingLogEntry.isAnyContent()) {
+                this.logBookEditor.getLogBook().removeLogEntry(this.logEntry);
+            }
+            else {
+                saveChanges();
+            }
         }
         
         this.listeners.forEach((listener) -> { 
@@ -125,6 +162,29 @@ public class LogEntryView {
     }
     
     
+    public void deleteLogEntry() {
+        PromptDialog promptDialog = new PromptDialog();
+        promptDialog.setTitle(ResourceSource.getString("Title.confirmDelete"));
+
+        promptDialog.addMessage(ResourceSource.getString("Prompt.confirmDelete"));
+
+        promptDialog.addButton(ResourceSource.getString("Button.delete"), PromptDialog.BTN_YES);
+        promptDialog.addButton(ResourceSource.getString("Button.cancel"), PromptDialog.BTN_CANCEL);
+        
+        switch (promptDialog.showOptionsDialog(this.viewStage)) {
+            case PromptDialog.BTN_YES :
+                break;
+                
+            case PromptDialog.BTN_CANCEL :
+                return;
+        }
+        
+        this.logBookEditor.getLogBook().removeLogEntry(this.logEntry);
+        
+        closeView(false);
+    }
+    
+    
     public void showView() {
         if (this.viewStage == null) {
             setupStage();
@@ -140,10 +200,18 @@ public class LogEntryView {
     protected void setupStage() {
         try {
             this.viewStage = new Stage();
-            Parent root = FXMLLoader.load(LogBookViewController.class.getResource("LogEntryView.fxml"));
-            
+
+            URL location = LogEntryViewController.class.getResource("LogEntryView.fxml");
+            FXMLLoader fxmlLoader = new FXMLLoader(location, ResourceSource.getBundle());
+            Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             scene.getStylesheets().add("leeboardslog/Styles.css");
+            
+            this.viewController = (LogEntryViewController)fxmlLoader.getController();
+            this.viewController.setLogEntryView(this);
+
+            this.viewStage.setTitle(getViewTitle());
+            this.viewController.setLogEntry(this.workingLogEntry);
             
             this.viewStage.setScene(scene);
             this.viewStage.setOnCloseRequest((event)-> {
@@ -158,7 +226,7 @@ public class LogEntryView {
     
     public String getViewTitle() {
         String title = this.workingLogEntry.getTitle();
-        if ((title == null) || title.isEmpty()) {
+        if (TextUtil.isAnyText(title)) {
             title = this.workingLogEntry.getTimePeriod().toString();
         }
         return title;

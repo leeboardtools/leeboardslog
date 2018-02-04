@@ -78,6 +78,12 @@ public class LogBookWindow {
                     if (!this.logBookEditor.safeCloseLogBookWindow(this)) {
                         event.consume();
                     }
+                    else {
+                        if (this.controller != null) {
+                            this.controller.setLogBookEditor(null);
+                            this.controller = null;
+                        }
+                    }
                 }
             });
             

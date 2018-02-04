@@ -16,11 +16,10 @@
 package com.leeboardtools.control.skin;
 
 import com.leeboardtools.control.DayCell;
+import com.leeboardtools.control.MultiDayView;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.Locale;
-import javafx.collections.ObservableMap;
-import javafx.css.PseudoClass;
 import javafx.scene.control.Cell;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
@@ -55,14 +54,19 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
             updateSkin();
         });
         
-        control.addEventFilter(MouseEvent.MOUSE_PRESSED, (event) -> {
-        //control.setOnMousePressed((event) -> {
+        control.addEventFilter(MouseEvent.MOUSE_PRESSED, (MouseEvent event) -> {
             if (!control.contains(event.getX(), event.getY())) {
                 return;
             }
             if (event.getButton() == MouseButton.PRIMARY) {
-                control.getMultiDayView().setActiveDate(control.getItem());
-                //event.consume();
+                MultiDayView<T> view = control.getMultiDayView();
+                if ((view.getActiveDate() == null) || !view.getActiveDate().equals(control.getItem())) {
+                    view.setActiveDate(control.getItem());
+                }
+                else if (!view.isEditing() && (event.getClickCount() == 2)) {
+                    view.startEdit();
+                    event.consume();
+                }
             }
         });
         

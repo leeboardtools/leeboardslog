@@ -742,4 +742,122 @@ public class TimePeriod implements Comparable <TimePeriod> {
             return o1.startInstant.compareTo(o2.startInstant);
         }
     }
+    
+    
+    /**
+     * Retrieves the start time as a {@link LocalDateTime}.
+     * @param zoneId    The zone id to use, if <code>null</code> {@link ZoneId#systemDefault() } is
+     * called to obtain the zone id.
+     * @return The start date-time.
+     */
+    public final LocalDateTime getLocalStartDateTime(ZoneId zoneId) {
+        if (zoneId == null) {
+            zoneId = ZoneId.systemDefault();
+        }
+        return this.startInstant.atZone(zoneId).toLocalDateTime();
+    }
+    
+    /**
+     * Retrieves the start time as a {@link LocalDateTime} using the system time zone.
+     * @return The start date-time.
+     */
+    public final LocalDateTime getLocalStartDateTime() {
+        return getLocalStartDateTime(null);
+    }
+
+    /**
+     * Retrieves the start date as a {@link LocalDate}.
+     * @param zoneId    The zone id to use, if <code>null</code> {@link ZoneId#systemDefault() } is
+     * called to obtain the zone id.
+     * @return The start date.
+     */
+    public final LocalDate getLocalStartDate(ZoneId zoneId) {
+        return getLocalStartDateTime(zoneId).toLocalDate();
+    }
+    
+    /**
+     * Retrieves the start date as a {@link LocalDate} using the system time zone.
+     * @return The start date.
+     */
+    public final LocalDate getLocalStartDate() {
+        return getLocalStartDate(null);
+    }
+    
+    
+    /**
+     * Retrieves the end time as a {@link LocalDateTime}.
+     * @param zoneId    The zone id to use, if <code>null</code> {@link ZoneId#systemDefault() } is
+     * called to obtain the zone id.
+     * @return The end date-time.
+     */
+    public final LocalDateTime getLocalEndDateTime(ZoneId zoneId) {
+        if (zoneId == null) {
+            zoneId = ZoneId.systemDefault();
+        }
+        return this.endInstant.atZone(zoneId).toLocalDateTime();
+    }
+
+    /**
+     * Retrieves the end time as a {@link LocalDateTime} using the system time zone.
+     * @return The end date-time.
+     */
+    public final LocalDateTime getLocalEndDateTime() {
+        return getLocalEndDateTime(null);
+    }
+    
+    /**
+     * Retrieves the end date as a {@link LocalDate}.
+     * @param zoneId    The zone id to use, if <code>null</code> {@link ZoneId#systemDefault() } is
+     * called to obtain the zone id.
+     * @return The end date.
+     */
+    public final LocalDate getLocalEndDate(ZoneId zoneId) {
+        return getLocalEndDateTime(zoneId).toLocalDate();
+    }
+    
+    /**
+     * Retrieves the end date as a {@link LocalDate} using the system time zone.
+     * @return The end date.
+     */
+    public final LocalDate getLocalEndDate() {
+        return getLocalEndDate(null);
+    }
+    
+    /**
+     * Retrieves the end date as a {@link LocalDate}, backing it up by one day if
+     * the time period represents full days.
+     * @param zoneId    The zone id to use, if <code>null</code> {@link ZoneId#systemDefault() } is
+     * called to obtain the zone id.
+     * @return The potentially adjusted end date.
+     */
+    public final LocalDate getAdjustedLocalEndDate(ZoneId zoneId) {
+        LocalDate endDate = getLocalEndDate(zoneId);
+        if (isFullDays(zoneId)) {
+            endDate = endDate.minusDays(1);
+        }
+        return endDate;
+    }
+    
+    
+    /**
+     * Determines if the time period represents full days relative to a time zone.
+     * The time period represents full days if the start and end times are not the same
+     * and both are at local midnight.
+     * @param zoneId    The zone id to use, if <code>null</code> {@link ZoneId#systemDefault() } is
+     * called to obtain the zone id.
+     * @return <code>true</code> if the time period represents full days.
+     */
+    public final boolean isFullDays(ZoneId zoneId) {
+        LocalDateTime startDateTime = getLocalStartDateTime(zoneId);
+        if (!startDateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+            return false;
+        }
+        
+        LocalDateTime endDateTime = getLocalEndDateTime(zoneId);
+        if (!endDateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+            return false;
+        }
+        
+        return !startDateTime.equals(endDateTime);
+    }
 }
