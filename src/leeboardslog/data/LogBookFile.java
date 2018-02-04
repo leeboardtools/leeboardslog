@@ -290,6 +290,8 @@ public class LogBookFile {
             if (TextUtil.isAnyText(activeAuthor)) {
                 logBookFile.logBook.setActiveAuthor(activeAuthor);
             }
+            logBookFile.changeIdTracker.clean();
+            logBookFile.isLogBookChanged = false;
             return logBookFile;
             
         } catch (FileNotFoundException ex) {

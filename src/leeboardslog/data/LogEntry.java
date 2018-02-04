@@ -38,9 +38,7 @@ import javafx.beans.property.ReadOnlySetProperty;
 import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleSetProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -72,6 +70,7 @@ public class LogEntry {
     public static final String TITLE_PROP = "title";
     public static final String LATEST_AUTHOR_PROP = "latestAuthor";
     public static final String TAGS_PROP = "tags";
+    public static final String DETAIL_LEVEL_PROP = "detailLevel";
     public static final String BODY_PROP = "body";
     public static final String BODY_FORMAT_PROP = "bodyFormat";
     
@@ -108,7 +107,7 @@ public class LogEntry {
      * zone id associated with the location of where the log entry started. Changing the
      * zone id does not change the start instant of the log entry.
      */
-    private final ObjectProperty<ZoneId> zoneId = new SimpleObjectProperty<>(this, ZONE_ID_PROP, ZoneId.systemDefault());
+    private final ObjectProperty<ZoneId> zoneId = new SimpleObjectProperty<>(this, ZONE_ID_PROP, null);
 
     public final ObjectProperty<ZoneId> zoneId() {
         return this.zoneId;
@@ -117,9 +116,6 @@ public class LogEntry {
         return this.zoneId.get();
     }
     public final void setZoneId(ZoneId value) {
-        if (value == null) {
-            value = ZoneId.systemDefault();
-        }
         this.zoneId.set(value);
     }
     
@@ -171,6 +167,28 @@ public class LogEntry {
     }
     
     
+    public static enum DetailLevel {
+        BIG_PICTURE,
+        HIGHLIGHT,
+        DETAIL,
+    }
+    
+    /**
+     * Defines the level of detail the log entry represents.
+     */
+    private final ObjectProperty<DetailLevel> detailLevel = new SimpleObjectProperty<>(this, DETAIL_LEVEL_PROP, DetailLevel.HIGHLIGHT);
+    
+    public final ObjectProperty<DetailLevel> detailLevelProperty() {
+        return detailLevel;
+    }
+    public final DetailLevel getDetailLevel() {
+        return detailLevel.get();
+    }
+    public final void setDetailLevel(DetailLevel value) {
+        detailLevel.set(value);
+    }
+    
+    
     /**
      * Defines the body content of the log entry. The format is determined by the bodyFormat
      * property.
@@ -193,31 +211,12 @@ public class LogEntry {
         /**
          * The fail-safe format, text is presented as-is.
          */
-        PLAIN_TEXT("plain"),
+        PLAIN_TEXT,
         
         /**
          * The text is styled with our pseudo-HTML tags. This is the default.
          */
-        STYLED_TEXT("styled");
-        
-        private final String id;
-        private Format(String id) {
-            this.id = id;
-        }
-        
-        @Override 
-        public String toString() {
-            return id;
-        }
-        
-        public static Format parse(String text) {
-            for (Format format : values()) {
-                if (format.id.equals(text)) {
-                    return format;
-                }
-            }
-            throw new RuntimeException();
-        }
+        STYLED_TEXT,
     }
     
     
@@ -263,9 +262,6 @@ public class LogEntry {
         if (timePeriod == null) {
             timePeriod = TimePeriod.now();
         }
-        if (zoneId == null) {
-            zoneId = ZoneId.systemDefault();
-        }
         
         this.timePeriod.set(timePeriod);
         this.zoneId.set(zoneId);
@@ -283,6 +279,9 @@ public class LogEntry {
             fireLogEntryChanged();
         });
         this.tags.addListener((SetChangeListener.Change<? extends String> change) -> {
+            fireLogEntryChanged();
+        });
+        this.detailLevel.addListener((value) -> {
             fireLogEntryChanged();
         });
 
@@ -319,16 +318,22 @@ public class LogEntry {
         JSONArray tags = jsonObject.getJSONArray(TAGS_PROP);
         JSONUtil.arrayToSet(tags, logEntry.tags.get());
         
-        String bodyFormatText = jsonObject.optString(BODY_FORMAT_PROP, null);
+        String detailLevelText = jsonObject.optString(DETAIL_LEVEL_PROP, DetailLevel.HIGHLIGHT.toString());
+        DetailLevel detailLevel;
+        try {
+            detailLevel = DetailLevel.valueOf(detailLevelText);
+        }
+        catch (RuntimeException ex) {
+            detailLevel = DetailLevel.HIGHLIGHT;
+        }
+        logEntry.setDetailLevel(detailLevel);
+        
+        String bodyFormatText = jsonObject.optString(BODY_FORMAT_PROP, Format.PLAIN_TEXT.toString());
         String body = jsonObject.optString(BODY_PROP, null);
         if (body != null) {
-            if (bodyFormatText == null) {
-                bodyFormatText = Format.PLAIN_TEXT.toString();
-            }
-            
             Format bodyFormat;
             try {
-                bodyFormat = Format.parse(bodyFormatText);
+                bodyFormat = Format.valueOf(bodyFormatText);
             }
             catch (RuntimeException ex) {
                 bodyFormat = Format.PLAIN_TEXT;
@@ -352,6 +357,7 @@ public class LogEntry {
         jsonObject.put(TITLE_PROP, this.title.get());
         jsonObject.put(LATEST_AUTHOR_PROP, this.latestAuthor.get());
         jsonObject.put(TAGS_PROP, this.tags.get());
+        jsonObject.put(DETAIL_LEVEL_PROP, this.detailLevel.get());
         jsonObject.put(BODY_FORMAT_PROP, this.bodyFormat.get());
         jsonObject.put(BODY_PROP, this.body.get());
     }
@@ -381,6 +387,7 @@ public class LogEntry {
         setZoneId(other.getZoneId());
         setTitle(other.getTitle());
         setLatestAuthor(other.getLatestAuthor());
+        setDetailLevel(other.getDetailLevel());
         
         this.tags.get().clear();
         this.tags.get().addAll(other.getTags());
@@ -422,6 +429,8 @@ public class LogEntry {
         hash = 79 * hash + Objects.hashCode(this.title.get());
         hash = 79 * hash + Objects.hashCode(this.latestAuthor.get());
         hash = 79 * hash + Objects.hashCode(this.tags.get());
+        hash = 79 * hash + Objects.hashCode(this.detailLevel.get());
+        hash = 79 * hash + Objects.hashCode(this.bodyFormat.get());
         hash = 79 * hash + Objects.hashCode(this.body.get());
         return hash;
     }
@@ -456,6 +465,12 @@ public class LogEntry {
         if (!Objects.equals(this.tags.get(), other.tags.get())) {
             return false;
         }
+        if (!Objects.equals(this.detailLevel.get(), other.detailLevel.get())) {
+            return false;
+        }
+        if (!Objects.equals(this.bodyFormat.get(), other.bodyFormat.get())) {
+            return false;
+        }
         if (!Objects.equals(this.body.get(), other.body.get())) {
             return false;
         }
@@ -463,8 +478,18 @@ public class LogEntry {
     }
     
     
+    public static boolean zonesEqual(ZoneId a, ZoneId b) {
+        if (a == null) {
+            return b == null;
+        }
+        else if (b == null) {
+            return false;
+        }
+        return a.equals(b);
+    }
+    
     void updateTimeSettings(TimePeriod timePeriod, ZoneId zoneId) {
-        if (this.timePeriod.get().equals(timePeriod) && this.zoneId.get().equals(zoneId)) {
+        if (this.timePeriod.get().equals(timePeriod) && zonesEqual(this.zoneId.get(), zoneId)) {
             return;
         }
         

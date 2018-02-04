@@ -347,13 +347,19 @@ public class LogBookEditor {
         }
         
         boolean isSaveChanges = false;
+        String saveChangesPrompt = ResourceSource.getString("Prompt.saveMultipleLogEntryChanges");
+        if (!isChanges && this.logBookFile.get().isLogBookChanged()) {
+            isChanges = true;
+            saveChangesPrompt = ResourceSource.getString("Prompt.saveLogBookChanges");
+        }
+        
         if (isChanges) {
             // Prompt is 'One or more Log Entries have been modified. Do you want to save the
             // changes to all, select which ones, discard all the changes, cancel.
             PromptDialog promptDialog = new PromptDialog();
             promptDialog.setTitle(ResourceSource.getString("Title.saveChanges"));
 
-            promptDialog.addMessage(ResourceSource.getString("Prompt.saveMultipleLogEntryChanges"));
+            promptDialog.addMessage(saveChangesPrompt);
 
             promptDialog.addButton(ResourceSource.getString("Button.yes"), PromptDialog.BTN_YES);
             promptDialog.addButton(ResourceSource.getString("Button.no"), PromptDialog.BTN_NO);

@@ -16,6 +16,7 @@
 package leeboardslog.ui;
 
 import com.leeboardtools.control.TimePeriodEditController;
+import com.leeboardtools.util.ResourceSource;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
@@ -25,6 +26,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
+import javafx.util.StringConverter;
 import leeboardslog.data.LogEntry;
 
 /**
@@ -47,7 +49,7 @@ public class LogEntryViewController implements Initializable {
     @FXML
     private ChoiceBox<String> timeZonePicker;
     @FXML
-    private ComboBox<?> levelPicker;
+    private ComboBox<LogEntry.DetailLevel> levelPicker;
     @FXML
     private TextField tagsEditor;
     
@@ -65,6 +67,42 @@ public class LogEntryViewController implements Initializable {
         this.timePeriodEditController.timePeriodProperty().addListener((property, oldValue, newValue) -> {
             if (this.logEntry != null) {
                 this.logEntry.setTimePeriod(newValue);
+            }
+        });
+        
+        this.timePeriodEditController.zoneIdProperty().addListener((property, oldValue, newValue) -> {
+            if (this.logEntry != null) {
+                this.logEntry.setZoneId(newValue);
+            }
+        });
+        
+        this.levelPicker.setConverter(new StringConverter<LogEntry.DetailLevel>() {
+            @Override
+            public String toString(LogEntry.DetailLevel object) {
+                switch (object) {
+                    case BIG_PICTURE :
+                        return ResourceSource.getString("Misc.bigPictureDetailLevel");
+                    case HIGHLIGHT :
+                        return ResourceSource.getString("Misc.highlightDetailLevel");
+                    case DETAIL :
+                        return ResourceSource.getString("Misc.detailDetailLevel");
+                    default :
+                        return null;
+                }
+            }
+
+            @Override
+            public LogEntry.DetailLevel fromString(String string) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        });
+        this.levelPicker.getItems().add(LogEntry.DetailLevel.BIG_PICTURE);
+        this.levelPicker.getItems().add(LogEntry.DetailLevel.HIGHLIGHT);
+        this.levelPicker.getItems().add(LogEntry.DetailLevel.DETAIL);
+        this.levelPicker.setEditable(false);
+        this.levelPicker.valueProperty().addListener((property, oldValue, newValue) -> {
+            if (this.logEntry != null) {
+                this.logEntry.setDetailLevel(newValue);
             }
         });
     }    
@@ -103,12 +141,20 @@ public class LogEntryViewController implements Initializable {
             this.titleEditor.setText(this.logEntry.getTitle());
             
             this.timePeriodEditController.setTimePeriod(this.logEntry.getTimePeriod());
+            this.timePeriodEditController.setZoneId(this.logEntry.getZoneId());
+            
+            this.levelPicker.setDisable(false);
+            this.levelPicker.setValue(this.logEntry.getDetailLevel());
         }
         else {
             this.titleEditor.setDisable(true);
             this.titleEditor.setText("");
 
             this.timePeriodEditController.setTimePeriod(null);
+            this.timePeriodEditController.setZoneId(null);
+            
+            this.levelPicker.setDisable(true);
+            this.levelPicker.setValue(null);
         }
     }
     
@@ -117,7 +163,6 @@ public class LogEntryViewController implements Initializable {
         this.logEntry.setTitle(this.titleEditor.getText());
         
         // TODO: Make sure the contents are up-to-date.
-        // The time period is already up to date.
         
     }
 }

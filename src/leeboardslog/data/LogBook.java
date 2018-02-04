@@ -34,11 +34,14 @@ import java.util.TreeSet;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyMapProperty;
 import javafx.beans.property.ReadOnlyMapWrapper;
+import javafx.beans.property.ReadOnlySetProperty;
+import javafx.beans.property.ReadOnlySetWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
+import javafx.collections.ObservableSet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -63,6 +66,8 @@ public class LogBook {
     private final Map<String, EntryMaster> masterLogEntries = new HashMap<>();
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByStart = new TreeMap<>(new LogEntry.TimePeriodStartComparator());
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByEnd = new TreeMap<>(new LogEntry.TimePeriodEndComparator());
+    
+    private final SortedMap<String, List<EntryMaster>> tagEntries = new TreeMap<>();
     
     private final List<Listener> listeners = new ArrayList<>();
 
@@ -135,7 +140,23 @@ public class LogBook {
         return readOnlyEntriesByDate.getReadOnlyProperty().get();
     }
     
-
+    
+    /**
+     * Defines a read-only set whose values are the tags currently in use.
+     */
+    private final ObservableSet<String> tagsInUse = FXCollections.observableSet(tagEntries.keySet());
+    private final ReadOnlySetWrapper<String> readOnlyTagsInUse
+        = new ReadOnlySetWrapper<>(this, "tagsInUse", FXCollections.unmodifiableObservableSet(tagsInUse));
+    
+    public final ReadOnlySetProperty<String> tagsInUseProperty() {
+        return readOnlyTagsInUse.getReadOnlyProperty();
+    }
+    
+    public final ObservableSet<String> getTagsInUse() {
+        return readOnlyTagsInUse.getReadOnlyProperty().get();
+    }
+    
+    
     /**
      * Default constructor.
      */
@@ -283,6 +304,7 @@ public class LogBook {
         this.masterLogEntries.clear();
         this.entriesByStart.clear();
         this.entriesByEnd.clear();
+        this.tagEntries.clear();
     }
     
 
@@ -470,12 +492,44 @@ public class LogBook {
             entryMaster.timePeriodKey.timePeriod.getDates(entryMaster.localDates, getCurrentZoneId());
             addEntryMaster(entryMaster);
         }
+        else {
+            if (!logEntry.getTags().equals(entryMaster.oldLogEntryValues.getTags())) {
+                removeEntryMasterTags(entryMaster);
+                addEntryMasterTags(entryMaster);
+            }
+        }
         
         this.listeners.forEach((listener)-> {
             listener.entryModified(this, logEntry, entryMaster.oldLogEntryValues);
         });
         
         entryMaster.oldLogEntryValues.copyFrom(logEntry);
+    }
+
+    
+    private void addEntryMasterTags(EntryMaster entryMaster) {
+        // We always add the new tags
+        entryMaster.logEntry.getTags().forEach((tag) -> {
+            List<EntryMaster> entryMasters = this.tagEntries.get(tag);
+            if (entryMasters == null) {
+                entryMasters = new ArrayList<>();
+                this.tagEntries.put(tag, entryMasters);
+            }
+            entryMasters.add(entryMaster);
+        });
+    }
+    
+    private void removeEntryMasterTags(EntryMaster entryMaster) {
+        // We always remove the old tags, not the new tags.
+        entryMaster.oldLogEntryValues.getTags().forEach((tag)-> {
+            List<EntryMaster> entryMasters = this.tagEntries.get(tag);
+            if (entryMasters != null) {
+                entryMasters.remove(entryMaster);
+                if (entryMasters.isEmpty()) {
+                    this.tagEntries.remove(tag);
+                }
+            }
+        });
     }
     
     
@@ -496,6 +550,8 @@ public class LogBook {
                 dayLogEntries.logEntries.add(entryMaster.logEntry);
             }
         });
+        
+        addEntryMasterTags(entryMaster);
     }
     
     private void removeEntryMaster(EntryMaster entryMaster) {
@@ -511,6 +567,8 @@ public class LogBook {
                 }
             }
         });
+        
+        removeEntryMasterTags(entryMaster);
     }
     
     

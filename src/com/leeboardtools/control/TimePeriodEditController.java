@@ -24,14 +24,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.TreeSet;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -41,16 +38,16 @@ import javafx.scene.control.DatePicker;
  * @author Albert Santos
  */
 public class TimePeriodEditController {
-    private DatePicker startDatePicker;
+    private final DatePicker startDatePicker;
 
-    private ComboBox<String> startTimePicker;
+    private final ComboBox<String> startTimePicker;
     private String allDayTimeLabel;
     private DateTimeFormatter timeFormatter;
     
-    private DatePicker endDatePicker;
-    private ComboBox<String> endTimePicker;
+    private final DatePicker endDatePicker;
+    private final ComboBox<String> endTimePicker;
 
-    private ChoiceBox<String> timeZonePicker;
+    private final ChoiceBox<String> timeZonePicker;
     private String defaultZoneIdLabel;
     
     private final ObjectProperty<TimePeriod> timePeriod = new SimpleObjectProperty<>(this, "timePeriod", null);

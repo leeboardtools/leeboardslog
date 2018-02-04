@@ -52,7 +52,7 @@ public class LogEntryView {
      */
     protected LogEntryView(LogEntry logEntry, LogBookEditor logBookEditor) {
         this.logEntry = logEntry;
-        this.workingLogEntry = new LogEntry();
+        this.workingLogEntry = new LogEntry(logEntry.getGuid(), logEntry.getTimePeriod(), logEntry.getZoneId());
         this.workingLogEntry.copyFrom(logEntry);
         this.logBookEditor = logBookEditor;
         
@@ -219,6 +219,8 @@ public class LogEntryView {
                     event.consume();
                 }
             });
+            
+            this.isChanged = false;
         } catch (IOException ex) {
             Logger.getLogger(LogEntryView.class.getName()).log(Level.SEVERE, null, ex);
         }
