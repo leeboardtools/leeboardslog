@@ -1,4 +1,12 @@
 # TODO
+    - List View:
+        - Just a straight ListView, with the cells text.
+        - Show Date-Time.
+        - Option to show:
+            - Title only
+            - Title plus first line.
+            - All.
+        
     - Menu:
         - Log File: OK
         - View
@@ -8,7 +16,8 @@
         - Settings
             - Author
 
-    - Add undo to LogBookEditor.
+    - Add simple undo support to LogBookEditor.updateLogEntry(), then LogBookEditor.canUndo(),
+        LogBookEditor.canRedo(), LogBookEditor.undo(), LogBookEditor.redo().
 
     - Add ability to select individual entries in ItemListCell.
         - If more items than will fit, pop up list view, or maybe larger ItemListCell.
@@ -20,6 +29,7 @@
     - Linear view:
         - Just a ListView with a custom ListCell that encapsulates DayCell?
 
+    - Add saving of diff information in logbookfile.
 
 # Bugs
 

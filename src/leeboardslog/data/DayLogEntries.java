@@ -17,12 +17,14 @@ package leeboardslog.data;
 
 import java.time.LocalDate;
 import java.util.List;
+import javafx.beans.Observable;
 import javafx.beans.property.ReadOnlyListProperty;
 import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.util.Callback;
 
 /**
  * This is used by {@link LogBook} to hold the set of log entries that are contained
@@ -48,7 +50,7 @@ public class DayLogEntries {
      * Defines a list of the {@link LogEntry} that have any part within this object's local date.
      */
 
-    final ObservableList<LogEntry> logEntries = FXCollections.observableArrayList();
+    final ObservableList<LogEntry> logEntries = FXCollections.observableArrayList(LogEntry.extractor());
     final ReadOnlyListWrapper<LogEntry> readOnlyLogEntries = new ReadOnlyListWrapper<>(this, "logEntries", logEntries);
     
     public final ReadOnlyListProperty<LogEntry> logEntriesProperty() {
@@ -56,6 +58,14 @@ public class DayLogEntries {
     }
     public final ObservableList<LogEntry> getLogEntries() {
         return readOnlyLogEntries.getReadOnlyProperty().get();
+    }
+    
+    
+    public static Callback<DayLogEntries, Observable[]> extractor() {
+        return (DayLogEntries entry) -> new Observable [] {
+            entry.localDateProperty(),
+            entry.logEntriesProperty(),
+        };
     }
     
     

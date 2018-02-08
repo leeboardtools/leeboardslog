@@ -44,6 +44,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
+import javafx.util.Callback;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -109,7 +110,7 @@ public class LogEntry {
      */
     private final ObjectProperty<ZoneId> zoneId = new SimpleObjectProperty<>(this, ZONE_ID_PROP, null);
 
-    public final ObjectProperty<ZoneId> zoneId() {
+    public final ObjectProperty<ZoneId> zoneIdProperty() {
         return this.zoneId;
     }
     public final ZoneId getZoneId() {
@@ -241,6 +242,20 @@ public class LogEntry {
     public void setBody(Format format, String value) {
         this.bodyFormat.set(format);
         this.body.set(value);
+    }
+    
+    
+    public static Callback<LogEntry, Observable[]> extractor() {
+        return (LogEntry logEntry) -> new Observable [] { 
+            logEntry.titleProperty(),
+            logEntry.timePeriodProperty(),
+            logEntry.zoneIdProperty(),
+            logEntry.latestAuthorProperty(),
+            logEntry.detailLevelProperty(),
+            logEntry.tagsProperty(),
+            logEntry.bodyFormatProperty(),
+            logEntry.bodyProperty(),
+        };
     }
     
     
@@ -575,9 +590,11 @@ public class LogEntry {
     
     /**
      * Retrieves a string of text that can be used to represent the log entry in a heading.
+     * @param useDateIfEmpty    If true, the time period is converted to a string and returned
+     * if no other text could be found.
      * @return The text.
      */
-    public final String getHeadingText() {
+    public final String getHeadingText(boolean useDateIfEmpty) {
         String text = getTitle();
         if (!TextUtil.isAnyText(text)) {
             String firstLine = TextUtil.getLine(getBody());
@@ -586,7 +603,12 @@ public class LogEntry {
                 return firstLine;
             }
             
-            text = this.timePeriod.get().toString();
+            if (useDateIfEmpty) {
+                text = this.timePeriod.get().toString();
+            }
+            else {
+                text = "";
+            }
         }
         return text;
     }

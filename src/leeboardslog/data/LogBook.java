@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyListProperty;
+import javafx.beans.property.ReadOnlyListWrapper;
 import javafx.beans.property.ReadOnlyMapProperty;
 import javafx.beans.property.ReadOnlyMapWrapper;
 import javafx.beans.property.ReadOnlySetProperty;
@@ -40,6 +43,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import org.json.JSONArray;
@@ -64,7 +68,7 @@ public class LogBook {
     
     
     private final Map<String, EntryMaster> masterLogEntries = new HashMap<>();
-    private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByStart = new TreeMap<>(new LogEntry.TimePeriodStartComparator());
+    private final ArrayList<EntryMaster> entriesByStart = new ArrayList<>();
     private final SortedMap<LogEntry.TimePeriodKey, EntryMaster> entriesByEnd = new TreeMap<>(new LogEntry.TimePeriodEndComparator());
     
     private final SortedMap<String, List<EntryMaster>> tagEntries = new TreeMap<>();
@@ -125,19 +129,35 @@ public class LogBook {
     
     
     /**
-     * Defines a read-only map whose keys are the local dates of all log entries and whose values
+     * Defines a read-only observable map whose keys are the local dates of all log entries and whose values
      * are {@link DayLogEntries} containing the log entries that are partly or entirely in the key date.
      */
-    private final ObservableMap<LocalDate, DayLogEntries> entriesByDate = FXCollections.observableHashMap();
-    private final ReadOnlyMapWrapper<LocalDate, DayLogEntries> readOnlyEntriesByDate 
-            = new ReadOnlyMapWrapper<>(this, "entriesByDate", FXCollections.unmodifiableObservableMap(entriesByDate));
+    private final ObservableMap<LocalDate, DayLogEntries> logEntriesByDate = FXCollections.observableHashMap();
+    private final ReadOnlyMapWrapper<LocalDate, DayLogEntries> readOnlyLogEntriesByDate 
+            = new ReadOnlyMapWrapper<>(this, "logEntriesByDate", logEntriesByDate);
 
-    public final ReadOnlyMapProperty<LocalDate, DayLogEntries> entriesByDateProperty() {
-        return readOnlyEntriesByDate.getReadOnlyProperty();
+    public final ReadOnlyMapProperty<LocalDate, DayLogEntries> logEntriesByDateProperty() {
+        return readOnlyLogEntriesByDate.getReadOnlyProperty();
     }
     
-    public final ObservableMap<LocalDate, DayLogEntries> getEntriesByDate() {
-        return readOnlyEntriesByDate.getReadOnlyProperty().get();
+    public final ObservableMap<LocalDate, DayLogEntries> getLogEntriesByDate() {
+        return readOnlyLogEntriesByDate.getReadOnlyProperty().get();
+    }
+    
+    
+    /**
+     * Defines a read-only observable list containing the log entries in order of increasing start time.
+     * Changes to the log entries generate listener notifications.
+     */
+    private final ObservableList<LogEntry> logEntriesByStart = FXCollections.observableArrayList(LogEntry.extractor());
+    private final ReadOnlyListWrapper<LogEntry> readOnlyLogEntriesByStart
+        = new ReadOnlyListWrapper<>(this, "logEntriesByStart", logEntriesByStart);
+    
+    public final ReadOnlyListProperty<LogEntry> logEntriesByStartProperty() {
+        return readOnlyLogEntriesByStart.getReadOnlyProperty();
+    }
+    public final ObservableList<LogEntry> getLogEntriesByStart() {
+        return readOnlyLogEntriesByStart.getReadOnlyProperty().get();
     }
     
     
@@ -304,6 +324,8 @@ public class LogBook {
         this.masterLogEntries.clear();
         this.entriesByStart.clear();
         this.entriesByEnd.clear();
+        this.logEntriesByDate.clear();
+        this.logEntriesByStart.clear();
         this.tagEntries.clear();
     }
     
@@ -344,19 +366,6 @@ public class LogBook {
         return (entryMaster == null) ? null : entryMaster.logEntry;
     }
     
-    
-    /**
-     * Retrieves a modifiable list of the log entries sorted by increasing start time.
-     * The list is a new copy and may be modified freely.
-     * @return The list of log entries.
-     */
-    public final List<LogEntry> getLogEntriesByStart() {
-        List<LogEntry> logEntries = new ArrayList<>(this.entriesByStart.size());
-        this.entriesByStart.forEach((key, value) -> {
-            logEntries.add(value.logEntry);
-        });
-        return logEntries;
-    }
     
     /**
      * Retrieves a modifiable list of the log entries sorted by increasing end time.
@@ -440,7 +449,7 @@ public class LogBook {
         }
         
         final Collection<LogEntry> destEntries = logEntries;
-        DayLogEntries dayLogEntries = this.entriesByDate.get(date);
+        DayLogEntries dayLogEntries = this.logEntriesByDate.get(date);
         if (dayLogEntries != null) {
             dayLogEntries.logEntries.forEach((logEntry) -> { 
                 destEntries.add(logEntry);
@@ -455,7 +464,7 @@ public class LogBook {
      * track of the timePeriod used to build the sorted lists, so when the time period
      * is changed, we can update the sorted lists accordingly.
      */
-    private class EntryMaster implements LogEntry.Listener {
+    private class EntryMaster implements LogEntry.Listener, Comparable<EntryMaster> {
         final LogEntry logEntry;
         final LogEntry oldLogEntryValues;
         LogEntry.TimePeriodKey timePeriodKey;
@@ -479,6 +488,11 @@ public class LogBook {
         @Override
         public void logEntryChanged(LogEntry logEntry) {
             entryMasterLogEntryChanged(this);
+        }
+
+        @Override
+        public int compareTo(EntryMaster o) {
+            return timePeriodKey.compareTo(o.timePeriodKey);
         }
     }
     
@@ -535,17 +549,23 @@ public class LogBook {
     
     
     private void addEntryMaster(EntryMaster entryMaster) {
-        this.entriesByStart.put(entryMaster.timePeriodKey, entryMaster);
+        // Result of binarySearch: index = -insertionPoint - 1
+        // Therefore: insertionPoint = -(index + 1)
+        final int index = Collections.binarySearch(this.entriesByStart, entryMaster);
+        final int insertionPoint = -(index + 1);
+        this.entriesByStart.add(insertionPoint, entryMaster);
+        this.logEntriesByStart.add(insertionPoint, entryMaster.logEntry);
+
         this.entriesByEnd.put(entryMaster.timePeriodKey, entryMaster);
         
         entryMaster.localDates.forEach((date) -> {
-            DayLogEntries dayLogEntries = this.entriesByDate.get(date);
+            DayLogEntries dayLogEntries = this.logEntriesByDate.get(date);
             if (dayLogEntries == null) {
                 dayLogEntries = new DayLogEntries(date);
                 // Need to add the log entries to dayLogEntries before adding the dayLogEntries
                 // to entriesByDate in case entriesByDate has listeners.
                 dayLogEntries.logEntries.add(entryMaster.logEntry);
-                this.entriesByDate.put(date, dayLogEntries);
+                this.logEntriesByDate.put(date, dayLogEntries);
             }
             else {
                 dayLogEntries.logEntries.add(entryMaster.logEntry);
@@ -556,15 +576,19 @@ public class LogBook {
     }
     
     private void removeEntryMaster(EntryMaster entryMaster) {
-        this.entriesByStart.remove(entryMaster.timePeriodKey);
+        int index = Collections.binarySearch(this.entriesByStart, entryMaster);
+        if (index >= 0) {
+            this.entriesByStart.remove(index);
+            this.logEntriesByStart.remove(index);
+        }
         this.entriesByEnd.remove(entryMaster.timePeriodKey);
         
         entryMaster.localDates.forEach((date)-> {
-            DayLogEntries dayLogEntries = this.entriesByDate.get(date);
+            DayLogEntries dayLogEntries = this.logEntriesByDate.get(date);
             if (dayLogEntries != null) {
                 dayLogEntries.logEntries.remove(entryMaster.logEntry);
                 if (dayLogEntries.logEntries.isEmpty()) {
-                    this.entriesByDate.remove(date);
+                    this.logEntriesByDate.remove(date);
                 }
             }
         });

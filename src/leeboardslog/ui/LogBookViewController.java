@@ -29,7 +29,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
 import leeboardslog.data.DayLogEntries;
 import com.leeboardtools.util.ListConverter;
 import com.leeboardtools.util.ResourceSource;
@@ -41,12 +40,12 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import leeboardslog.data.LogBook;
 import leeboardslog.data.LogBookFile;
@@ -67,7 +66,7 @@ public class LogBookViewController implements Initializable {
     @FXML
     private TextField searchText;
     @FXML
-    private BorderPane mainPane;
+    private StackPane mainPane;
     @FXML
     private CheckMenuItem monthlyViewMenuItem;
     @FXML
@@ -85,6 +84,8 @@ public class LogBookViewController implements Initializable {
     
 
     private MonthlyView<DayLogEntries> monthlyViewControl;
+    private EntryListView entryListViewControl;
+    
     private LogBookEditor logBookEditor;
     private Stage stage;
     
@@ -228,7 +229,7 @@ public class LogBookViewController implements Initializable {
             ObservableList<String> strings = FXCollections.observableArrayList();
             if (object != null) {
                 object.getLogEntries().forEach((logEntry)-> {
-                    String text = logEntry.getHeadingText();
+                    String text = logEntry.getHeadingText(false);
                     strings.add(text);
                 });
             }
@@ -273,7 +274,7 @@ public class LogBookViewController implements Initializable {
         //
         // Month View Control...
         this.monthlyViewControl = new MonthlyView<>();
-        this.mainPane.setCenter(this.monthlyViewControl);
+        this.mainPane.getChildren().add(this.monthlyViewControl);
         
         this.monthlyViewControl.setStringListConverter(new DayLogEntriesConverter());
 
@@ -295,6 +296,12 @@ public class LogBookViewController implements Initializable {
         });
         
         
+        //
+        // Entry List View Control...
+        this.entryListViewControl = new EntryListView();
+        this.mainPane.getChildren().add(this.entryListViewControl);
+        
+        
         this.activeViewType.addListener((property, oldValue, newValue) -> {
             boolean isMonthly = false;
             boolean isEntryList = false;
@@ -314,6 +321,7 @@ public class LogBookViewController implements Initializable {
             this.monthlyViewControl.setVisible(isMonthly);
             this.monthlyViewMenuItem.setSelected(isMonthly);
             
+            this.entryListViewControl.setVisible(isEntryList);
             this.entryListMenuItem.setSelected(isEntryList);
             
             this.timeLineViewMenuItem.setSelected(isTimeLine);
@@ -326,6 +334,7 @@ public class LogBookViewController implements Initializable {
         });
         
         this.activeViewType.set(ViewType.MONTHLY);
+        this.activeViewType.set(ViewType.ENTRY_LIST);
     }
     
     
@@ -382,6 +391,9 @@ public class LogBookViewController implements Initializable {
                 if (this.logBookEditor.getLogBook() != null) {
                     this.logBookEditor.getLogBook().addListener(logBookListener);
                 }
+                
+                this.entryListViewControl.setupView(this.logBookEditor);
+                
                 updateFromLogEntries();
             }
         }
@@ -394,7 +406,7 @@ public class LogBookViewController implements Initializable {
         }
         if (this.monthlyViewControl != null) {
             if (logBook != null) {
-                this.monthlyViewControl.setItems(logBook.getEntriesByDate());
+                this.monthlyViewControl.setItems(logBook.getLogEntriesByDate());
             }
             else {
                 this.monthlyViewControl.setItems(null);

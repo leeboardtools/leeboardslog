@@ -123,7 +123,7 @@ public class LogEntryTest {
     public void testSetZoneId() {
         System.out.println("setZoneId");
         LogEntry logEntry = new LogEntry();
-        assertEquals(ZoneId.systemDefault(), logEntry.getZoneId());
+        assertEquals(null, logEntry.getZoneId());
         
         ZoneId zoneId = ZoneId.of("Europe/Paris");
         logEntry.setZoneId(zoneId);
@@ -270,7 +270,7 @@ public class LogEntryTest {
     public void testSetTitle() {
         System.out.println("setTitle");
         LogEntry instance = new LogEntry();
-        assertEquals(null, instance.getTitle());
+        assertEquals("", instance.getTitle());
         
         String title = "A title";
         instance.setTitle(title);

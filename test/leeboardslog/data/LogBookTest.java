@@ -256,7 +256,7 @@ public class LogBookTest {
     }
     
     void assertLogEntriesByDate(TreeMap<LocalDate, Collection<LogEntry>> refDateEntries, LogBook logBook) {
-        ObservableMap<LocalDate, DayLogEntries> entriesByDate = logBook.getEntriesByDate();
+        ObservableMap<LocalDate, DayLogEntries> entriesByDate = logBook.getLogEntriesByDate();
         assertEquals(refDateEntries.size(), entriesByDate.size());
         
         refDateEntries.forEach((key, refEntries) -> {
