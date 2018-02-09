@@ -21,8 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import javafx.util.Callback;
-import static javax.lang.model.type.TypeKind.VOID;
 
 /**
  * Some utilities for working with files.

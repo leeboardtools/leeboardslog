@@ -573,6 +573,8 @@ public class LogBook {
         });
         
         addEntryMasterTags(entryMaster);
+        
+        markChanged();
     }
     
     private void removeEntryMaster(EntryMaster entryMaster) {
@@ -594,6 +596,8 @@ public class LogBook {
         });
         
         removeEntryMasterTags(entryMaster);
+
+        markChanged();
     }
     
     

@@ -38,7 +38,7 @@ import leeboardslog.data.LogEntry;
  * 
  * @author albert
  */
-public class EntryListView extends StackPane {
+public class EntryListView extends StackPane implements LogBookEditor.Listener {
     private LogBookEditor logBookEditor;
     private ListView<LogEntry> listView;
     private final ChangeListener<LogBookFile> logBookFileListener = (property, oldValue, newValue) -> {
@@ -75,6 +75,7 @@ public class EntryListView extends StackPane {
     public void setupView(LogBookEditor logBookEditor) {
         if (this.logBookEditor != logBookEditor) {
             if (this.logBookEditor != null) {
+                this.logBookEditor.removeListener(this);
                 this.logBookEditor.logBookFileProperty().removeListener(this.logBookFileListener);
             }
             this.logBookEditor = logBookEditor;
@@ -82,18 +83,28 @@ public class EntryListView extends StackPane {
             if (this.logBookEditor != null) {
                 this.logBookEditor.logBookFileProperty().addListener(this.logBookFileListener);
                 this.listView.setItems(this.logBookEditor.getLogBook().getLogEntriesByStart());
+                this.logBookEditor.addListener(this);
                 
             }
         }
     }
     
+
+    @Override
+    public boolean canCloseLogBookEditor(LogBookEditor editor) {
+        return true;
+    }
+
+    @Override
+    public void logBookEditorClosing(LogBookEditor editor) {
+        this.listView.setItems(null);
+    }
+
+    @Override
+    public void logEntryViewClosed(LogBookEditor editor, LogEntry logEntry) {        
+    }
     
     
-    // What do we want the cell to be???
-    // Can we somehow shoehorn DayCell into this?
-    // Not really, since a DayCell refers to a MultiDayView.
-    // 
-    // Date:Time: HeadingText ...
     public class EntryCell extends ListCell<LogEntry> {
         private final TitledPane titledPane = new TitledPane();
         
@@ -107,11 +118,26 @@ public class EntryListView extends StackPane {
             this.textEditor.setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
             this.textEditor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             
+            this.textEditor.setOnAction((event) -> {
+                commitChanges();
+            });
+            
             setGraphic(this.titledPane);
+        }
+        
+        public void commitChanges() {
+            if ((getItem() != null) && (logBookEditor != null) && (logBookEditor.getLogBook() != null)) {
+                LogEntry workingLogEntry = new LogEntry();
+                workingLogEntry.copyFrom(getItem());
+                workingLogEntry.setBody(LogEntry.Format.STYLED_TEXT, textEditor.getStyledText());
+                logBookEditor.updateLogEntry(getItem().getGuid(), workingLogEntry);
+            }
         }
 
         @Override
         protected void updateItem(LogEntry item, boolean empty) {
+            commitChanges();
+            
             super.updateItem(item, empty);
             
             if ((item == null) || empty) {
@@ -136,7 +162,7 @@ public class EntryListView extends StackPane {
                 this.titledPane.setVisible(true);
                 this.titledPane.setExpanded(false);
                 
-                this.textEditor.setText(item.getBody());
+                this.textEditor.setStyledText(item.getBody());
             }
         }
         

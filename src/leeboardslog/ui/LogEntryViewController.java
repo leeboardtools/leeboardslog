@@ -16,6 +16,7 @@
 package leeboardslog.ui;
 
 import com.leeboardtools.control.TimePeriodEditController;
+import com.leeboardtools.text.StyledTextEditor;
 import com.leeboardtools.util.ResourceSource;
 import java.net.URL;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
 import javafx.util.StringConverter;
 import leeboardslog.data.LogBook;
 import leeboardslog.data.LogEntry;
@@ -43,7 +45,8 @@ import leeboardslog.data.LogEntry;
  * @author Albert Santos
  */
 public class LogEntryViewController implements Initializable {
-
+    @FXML
+    private BorderPane mainPane;
     @FXML
     private TextField titleEditor;
     @FXML
@@ -65,6 +68,7 @@ public class LogEntryViewController implements Initializable {
     
     
     private TimePeriodEditController timePeriodEditController;
+    private StyledTextEditor bodyEditor;
 
     /**
      * Initializes the controller class.
@@ -115,6 +119,9 @@ public class LogEntryViewController implements Initializable {
                 this.logEntry.setDetailLevel(newValue);
             }
         });
+        
+        this.bodyEditor = new StyledTextEditor();
+        this.mainPane.setCenter(this.bodyEditor);
     }    
 
     @FXML
@@ -166,6 +173,9 @@ public class LogEntryViewController implements Initializable {
                 updateTagsInUseMenu();
             });
             updateTagsInUseMenu();
+            
+            this.bodyEditor.setDisable(false);
+            this.bodyEditor.setStyledText(this.logEntry.getBody());
         }
         else {
             this.titleEditor.setDisable(true);
@@ -181,6 +191,9 @@ public class LogEntryViewController implements Initializable {
             this.tagsEditor.setText("");
             
             this.tagsMenuButton.setDisable(true);
+            
+            this.bodyEditor.setDisable(true);
+            this.bodyEditor.setStyledText("");
         }
     }
     
@@ -243,6 +256,7 @@ public class LogEntryViewController implements Initializable {
         stringToTags(this.logEntry, this.tagsEditor.getText());
         
         // TODO: Make sure the contents are up-to-date.
+        this.logEntry.setBody(LogEntry.Format.STYLED_TEXT, this.bodyEditor.getStyledText());
         
     }
 }

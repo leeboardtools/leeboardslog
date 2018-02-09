@@ -368,6 +368,12 @@ public class LogBookEditor {
             return true;
         }
         
+        for (Listener listener : this.listeners) {
+            if (!listener.canCloseLogBookEditor(this)) {
+                return false;
+            }
+        }
+        
         // Do any views need to save changes?
         boolean isChanges = false;
         LogEntryView [] logEntryViews = getOpenLogEntryViews();
@@ -418,6 +424,10 @@ public class LogBookEditor {
         for (LogEntryView logEntryView : logEntryViews) {
             logEntryView.closeView(isSaveChanges);
         }
+        
+        listeners.forEach((listener) -> {
+            listener.logBookEditorClosing(this);
+        });
 
         if (isSaveChanges) {
             try {
@@ -433,6 +443,9 @@ public class LogBookEditor {
     }
     
     
+    /**
+     * Calls the log book file's {@link LogBookFile#updateFile() } to save any changes to the log book.
+     */
     public void saveLogBook() {
         try {
             this.logBookFile.get().updateFile();
@@ -578,6 +591,22 @@ public class LogBookEditor {
     
     
     public interface Listener {
+        /**
+         * This is called prior to the log book editor being closed safely, the listener
+         * can cancel the closing by returning <code>false</code>.
+         * @param editor    The editor calling this.
+         * @return <code>true</code> if okay to close, <code>false</code> if not.
+         */
+        public boolean canCloseLogBookEditor(LogBookEditor editor);
+
+        /**
+         * Called during the log book editor being closed safely after everyone that can 
+         * cancel has agreed to not cancel, but before any final changes have been
+         * saved.
+         * @param editor    The editor calling this.
+         */
+        public void logBookEditorClosing(LogBookEditor editor);
+        
         public void logEntryViewClosed(LogBookEditor editor, LogEntry logEntry);
     }
     

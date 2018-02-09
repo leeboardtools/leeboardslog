@@ -15,17 +15,21 @@
  */
 package com.leeboardtools.text;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
 /**
  * My editor for editing styled text. For now it just encapsulates a TextArea.
+ * The basic format is HTML, see {@link Style}.
  * @author albert
  */
 public class StyledTextEditor extends StackPane {
     TextArea textArea;
-    
     
     public StyledTextEditor() {
         this.textArea = new TextArea();
@@ -33,15 +37,52 @@ public class StyledTextEditor extends StackPane {
         this.textArea.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         this.textArea.setPrefRowCount(4);
         
+        // TEST!!!
+        this.textArea.focusedProperty().addListener((property, oldValue, newValue)-> {
+            if (!newValue) {
+                fireEvent(new ActionEvent(this, null));
+            }
+        });
+        
         getChildren().add(this.textArea);
     }
     
     
-    public void setText(String text) {
+    public void setStyledText(String text) {
         this.textArea.setText(text);
     }
     
-    public String getText() {
+    public String getStyledText() {
         return this.textArea.getText();
     }
+    
+    
+    // TODO: Add an API fairly similar to TextInputControl.
+    
+    private ObjectProperty<EventHandler<ActionEvent>> onAction;
+    
+    public final ObjectProperty<EventHandler<ActionEvent>> onActionProperty() {
+        if (onAction == null) {
+            onAction = new SimpleObjectProperty<EventHandler<ActionEvent>>(this, "onAction", null) {
+                @Override 
+                protected void invalidated() {
+                    setEventHandler(ActionEvent.ACTION, get());
+                }
+            };
+        }
+        return onAction;
+    }
+    public final EventHandler<ActionEvent> getOnAction() {
+        return (onAction != null) ? onAction.get() : null;
+    }
+    public final void setOnAction(EventHandler<ActionEvent> value) {
+        onActionProperty().set(value);
+    }
+    
+    
+    // Things to add:
+    // Styles!
+    // Character Styles
+    // Paragraph Styles
+    // Other Styles (table styles, what else?)
 }
