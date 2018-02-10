@@ -47,6 +47,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javax.swing.undo.UndoManager;
 import leeboardslog.data.LogBook;
 import leeboardslog.data.LogBookFile;
 import leeboardslog.data.LogEntry;
@@ -90,6 +91,10 @@ public class LogBookViewController implements Initializable {
     private Stage stage;
     
     private final ObjectProperty<LocalDate> activeDate = new SimpleObjectProperty<>(this, "activeDate", LocalDate.now());
+    @FXML
+    private MenuItem undoMenuItem;
+    @FXML
+    private MenuItem redoMenuItem;
     
     public final LocalDate getActiveDate() {
         return activeDate.get();
@@ -136,6 +141,26 @@ public class LogBookViewController implements Initializable {
     private void onAutoSave(ActionEvent event) {
         if (this.logBookEditor != null) {
             this.logBookEditor.setAutoSave(!this.logBookEditor.getAutoSave());
+        }
+    }
+
+    @FXML
+    private void onUndo(ActionEvent event) {
+        UndoManager undoManager = (this.logBookEditor != null) ? this.logBookEditor.getUndoManager() : null;
+        if (undoManager != null) {
+            if (undoManager.canUndo()) {
+                undoManager.undo();
+            }
+        }
+    }
+
+    @FXML
+    private void onRedo(ActionEvent event) {
+        UndoManager undoManager = (this.logBookEditor != null) ? this.logBookEditor.getUndoManager() : null;
+        if (undoManager != null) {
+            if (undoManager.canRedo()) {
+                undoManager.redo();
+            }
         }
     }
 
@@ -392,7 +417,7 @@ public class LogBookViewController implements Initializable {
                     this.logBookEditor.getLogBook().addListener(logBookListener);
                 }
                 
-                this.entryListViewControl.setupView(this.logBookEditor);
+                this.entryListViewControl.setupView(this.logBookEditor, this.activeDate);
                 
                 updateFromLogEntries();
             }
@@ -432,6 +457,16 @@ public class LogBookViewController implements Initializable {
     void updateMenu() {
         if (this.autoSaveMenuItem != null) {
             this.autoSaveMenuItem.setSelected(this.logBookEditor.getAutoSave());
+        }
+        
+        UndoManager undoManager = (this.logBookEditor != null) ? this.logBookEditor.getUndoManager() : null;
+        if (undoManager != null) {
+            this.undoMenuItem.setDisable(!undoManager.canUndo());
+            this.redoMenuItem.setDisable(!undoManager.canRedo());
+        }
+        else {
+            this.undoMenuItem.setDisable(true);
+            this.redoMenuItem.setDisable(true);
         }
         
         updateLogEntriesMenu();

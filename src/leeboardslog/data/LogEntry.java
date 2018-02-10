@@ -15,6 +15,7 @@
  */
 package leeboardslog.data;
 
+import com.leeboardtools.text.StyledText;
 import com.leeboardtools.text.TextUtil;
 import com.leeboardtools.util.JSONUtil;
 import com.leeboardtools.util.TimePeriod;
@@ -313,6 +314,26 @@ public class LogEntry {
         this(null, null, null);
     }
     
+    
+    /**
+     * Copy constructor. The GUID is copied.
+     * @param other The log entry to be copied.
+     */
+    public LogEntry(LogEntry other) {
+        this(other.getGuid(), other.getTimePeriod(), other.getZoneId());
+        copyFrom(other);
+    }
+    
+    /**
+     * Pseudo-copy constructor, except an explicit guid is assigned.
+     * @param guid  The GUID to use.
+     * @param other The log entry to be copied.
+     */
+    public LogEntry(String guid, LogEntry other) {
+        this(guid, other.getTimePeriod(), other.getZoneId());
+        copyFrom(other);
+    }
+    
 
     /**
      * Creates an instance of LogEntry based upon the key-values in a JSON object.
@@ -597,9 +618,8 @@ public class LogEntry {
     public final String getHeadingText(boolean useDateIfEmpty) {
         String text = getTitle();
         if (!TextUtil.isAnyText(text)) {
-            String firstLine = TextUtil.getLine(getBody());
+            String firstLine = StyledText.getFirstTextSentence(getBody());
             if (firstLine != null) {
-                // TODO Strip out markup...
                 return firstLine;
             }
             

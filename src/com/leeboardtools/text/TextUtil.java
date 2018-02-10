@@ -47,4 +47,39 @@ public class TextUtil {
         }
         return text;
     }
+    
+    
+    
+    /**
+     * Retrieves the first sentence from a string. The first sentence is all the text up to 
+     * and including the first period or sequence of periods (as in '...'). If there is no
+     * period the entire string is returned. The returned string has had its whitespace trimmed.
+     * @param text  The text of interest.
+     * @param startOffset   The offset of the start of the text to search.
+     * @param endOffset The offset of the end of the text to search, exclusive. If &lt; 0
+     * the length of the text is used.
+     * @return The first sentenced trimmed of whitespace, or <code>null</code> if text is
+     * <code>null</code>
+     */
+    public static String getFirstSentence(String text, int startOffset, int endOffset) {
+        if (text == null) {
+            return null;
+        }
+        
+        if (endOffset < 0) {
+            endOffset = text.length();
+        }
+        
+        int period = text.indexOf('.', startOffset);
+        if ((period >= 0) && (period < endOffset)) {
+            int endIndex = period + 1;
+            while ((text.charAt(endIndex) == '.') && (endIndex < endOffset)) {
+                ++endIndex;
+            }
+            
+            endOffset = endIndex;
+        }
+        
+        return text.substring(startOffset, endOffset).trim();
+    }
 }

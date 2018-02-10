@@ -21,7 +21,9 @@ import com.leeboardtools.util.TimePeriod;
 import java.io.File;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -29,12 +31,18 @@ import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import javax.swing.undo.AbstractUndoableEdit;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoManager;
 import leeboardslog.data.LogBook;
 import leeboardslog.data.LogBookFile;
 import leeboardslog.data.LogEntry;
@@ -76,6 +84,19 @@ public class LogBookEditor {
     }
     public final void setAutoSave(boolean value) {
         autoSave.set(value);
+    }
+    
+    
+    private final ObjectProperty<UndoManager> undoManager = new SimpleObjectProperty(this, "undoManager", new UndoManager());
+    
+    public final ObjectProperty<UndoManager> undoManagerProperty() {
+        return undoManager;
+    }
+    public final UndoManager getUndoManager() {
+        return undoManager.get();
+    }
+    public final void setUndoManager(UndoManager value) {
+        undoManager.set(value);
     }
     
     
@@ -129,6 +150,13 @@ public class LogBookEditor {
                 }
             });
         }
+        
+        this.logBookFile.addListener((property, oldValue, newValue) -> {
+            UndoManager undoManager = getUndoManager();
+            if (undoManager != null) {
+                undoManager.discardAllEdits();
+            }
+        });
     }
     
     protected void generatePromptMessagesForFileException(String prefixId, ArrayList<String> promptMsgs, LogBookFile.FileException ex) {
@@ -526,23 +554,76 @@ public class LogBookEditor {
      * @param workingLogEntry The log entry whose contents are to be copied.
      */
     public void updateLogEntry(String guid, LogEntry workingLogEntry) {
-        LogBook logBook = getLogBookFile().getLogBook();
-        LogEntry logEntry = logBook.getLogEntryWithGuid(guid);
-        if (logEntry == null) {
-            logEntry = new LogEntry(guid, null, null);
-            logEntry.copyFrom(workingLogEntry);
-            logBook.addLogEntry(logEntry);
-        }
-        else {
-            logEntry.copyFrom(workingLogEntry);
-        }
-        
-        if (getAutoSave()) {
-            saveLogBook();
-        }
+        EditLogEntryEdit edit = new EditLogEntryEdit(guid, workingLogEntry);
+        if (getUndoManager() != null) {
+            getUndoManager().addEdit(edit);
+        }        
     }
     
     
+    public class EditLogEntryEdit extends AbstractUndoableEdit {
+        final LogEntry newLogEntrySettings;
+        final LogEntry savedLogEntrySettings;
+        
+        public EditLogEntryEdit(String guid, LogEntry newLogEntrySettings) {
+            LogBook logBook = getLogBook();
+            LogEntry currentLogEntry = logBook.getLogEntryWithGuid(guid);
+            if (currentLogEntry != null) {
+                savedLogEntrySettings = new LogEntry(currentLogEntry);
+            }
+            else {
+                savedLogEntrySettings = null;
+            }
+            this.newLogEntrySettings = new LogEntry(guid, newLogEntrySettings);
+            
+            applyEdit();
+        }
+        
+        void applyEdit() {
+            LogBook logBook = getLogBook();
+            if (logBook != null) {
+                LogEntry logEntry = logBook.getLogEntryWithGuid(newLogEntrySettings.getGuid());
+                if (logEntry != null) {
+                    logEntry.copyFrom(newLogEntrySettings);
+                }
+                else {
+                    logBook.addLogEntry(new LogEntry(newLogEntrySettings));
+                }
+                if (getAutoSave()) {
+                    saveLogBook();
+                }
+            }
+        }
+
+        @Override
+        public void redo() throws CannotRedoException {
+            super.redo();
+            applyEdit();
+        }
+
+        @Override
+        public void undo() throws CannotUndoException {
+            super.undo();
+            LogBook logBook = getLogBook();
+            if (logBook != null) {
+                if (savedLogEntrySettings == null) {
+                    logBook.removeLogEntry(newLogEntrySettings.getGuid());
+                }
+                else {
+                    LogEntry logEntry = logBook.getLogEntryWithGuid(savedLogEntrySettings.getGuid());
+                    if (logEntry != null) {
+                        logEntry.copyFrom(savedLogEntrySettings);
+                    }
+                }
+                if (getAutoSave()) {
+                    saveLogBook();
+                }
+            }
+        }
+        
+    }
+    
+
     /**
      * Opens a new log book window for this editor.
      * @return The log book window. The window is displayed and given focus.

@@ -20,12 +20,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.Skin;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.StackPane;
 import leeboardslog.data.LogBookFile;
@@ -40,6 +43,8 @@ import leeboardslog.data.LogEntry;
  */
 public class EntryListView extends StackPane implements LogBookEditor.Listener {
     private LogBookEditor logBookEditor;
+    private ObjectProperty<LocalDate> activeDateProperty;
+    
     private ListView<LogEntry> listView;
     private final ChangeListener<LogBookFile> logBookFileListener = (property, oldValue, newValue) -> {
         if (newValue != null) {
@@ -49,6 +54,7 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
             listView.setItems(FXCollections.emptyObservableList());
         }
     };
+    
     
     private DateTimeFormatter dateOnlyFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd  ");
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm a  ");
@@ -72,12 +78,13 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
         this.getChildren().add(this.listView);
     }
     
-    public void setupView(LogBookEditor logBookEditor) {
+    public void setupView(LogBookEditor logBookEditor, ObjectProperty<LocalDate> activeDateProperty) {
         if (this.logBookEditor != logBookEditor) {
             if (this.logBookEditor != null) {
                 this.logBookEditor.removeListener(this);
                 this.logBookEditor.logBookFileProperty().removeListener(this.logBookFileListener);
             }
+            
             this.logBookEditor = logBookEditor;
             
             if (this.logBookEditor != null) {
@@ -87,8 +94,38 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
                 
             }
         }
+        
+        if (this.activeDateProperty != activeDateProperty) {
+            this.activeDateProperty = activeDateProperty;
+            
+            if (this.activeDateProperty != null) {
+                this.activeDateProperty.addListener((property, oldValue, newValue) -> {
+                    updateFromActiveDate();
+                });
+            }
+        }
+        
+        updateFromActiveDate();
     }
     
+    void updateFromActiveDate() {
+        LocalDate activeDate = (this.activeDateProperty == null) ? null : this.activeDateProperty.get();
+        if ((activeDate != null) && (logBookEditor != null) && (logBookEditor.getLogBook() != null)) {
+            LogEntry tmpLogEntry = new LogEntry();
+            tmpLogEntry.setDate(this.activeDateProperty.get(), logBookEditor.getLogBook().getCurrentZoneId());
+            ObservableList<LogEntry> logEntries = logBookEditor.getLogBook().getLogEntriesByStart();
+            int index = Collections.binarySearch(logEntries, tmpLogEntry, new LogEntry.StartComparator());
+            // Result of binarySearch: index = -insertionPoint - 1
+            // Therefore: insertionPoint = -(index + 1)
+            if (index < 0) {
+                index = -(index + 1);
+            }
+            if (index >= 0) {
+                listView.scrollTo(index);
+                listView.getFocusModel().focus(index);
+            }
+        }
+    }
 
     @Override
     public boolean canCloseLogBookEditor(LogBookEditor editor) {
@@ -97,6 +134,11 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
 
     @Override
     public void logBookEditorClosing(LogBookEditor editor) {
+        this.entryCells.forEach((cell)-> {
+            cell.commitChanges();
+        });
+        this.entryCells.clear();
+        
         this.listView.setItems(null);
     }
 
@@ -104,6 +146,8 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
     public void logEntryViewClosed(LogBookEditor editor, LogEntry logEntry) {        
     }
     
+    
+    private final List<EntryCell> entryCells = new ArrayList<>();
     
     public class EntryCell extends ListCell<LogEntry> {
         private final TitledPane titledPane = new TitledPane();
@@ -123,12 +167,13 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
             });
             
             setGraphic(this.titledPane);
+            
+            entryCells.add(this);
         }
         
         public void commitChanges() {
             if ((getItem() != null) && (logBookEditor != null) && (logBookEditor.getLogBook() != null)) {
-                LogEntry workingLogEntry = new LogEntry();
-                workingLogEntry.copyFrom(getItem());
+                LogEntry workingLogEntry = new LogEntry(getItem());
                 workingLogEntry.setBody(LogEntry.Format.STYLED_TEXT, textEditor.getStyledText());
                 logBookEditor.updateLogEntry(getItem().getGuid(), workingLogEntry);
             }
@@ -136,7 +181,7 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
 
         @Override
         protected void updateItem(LogEntry item, boolean empty) {
-            commitChanges();
+            //commitChanges();
             
             super.updateItem(item, empty);
             

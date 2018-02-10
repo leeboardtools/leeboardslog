@@ -6,11 +6,16 @@
             - Title only
             - Title plus first line.
             - All.
+        - Add Active Date support.
+
+    - Figure out how to hook UndoManager/UndoableEdit into StyledTextEditor.
+        Or maybe not worry about it for the TextArea implementation.
         
     - Menu:
         - Log File: OK
         - View
-            - Monthly
+            - Monthly OK
+            - Entry List OK
             - Timeline
         - Log Entries: OK
         - Settings
