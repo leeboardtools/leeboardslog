@@ -104,7 +104,7 @@ public class TimePeriodEditController {
         });
 
         this.timeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT);
-        this.allDayTimeLabel = ResourceSource.getString("LB.Label.allDay");
+        this.allDayTimeLabel = ResourceSource.getString("LBLabel.allDay");
         this.startTimePicker.getItems().add(this.allDayTimeLabel);
         addTimeIncrements(this.startTimePicker.getItems(), this.timeFormatter);
         this.startTimePicker.setOnAction((event)-> {
@@ -125,7 +125,7 @@ public class TimePeriodEditController {
             });
 
             ObservableList<String> zoneIdList = this.timeZonePicker.getItems();
-            this.defaultZoneIdLabel = ResourceSource.getString("LB.Label.systemZoneId", ZoneId.systemDefault().getId());
+            this.defaultZoneIdLabel = ResourceSource.getString("LBLabel.systemZoneId", ZoneId.systemDefault().getId());
             
             zoneIdList.add(this.defaultZoneIdLabel);
             

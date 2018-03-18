@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 albert.
+ * Copyright 2018 Albert Santos.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.leeboardtools.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -131,6 +132,51 @@ public class FileUtil {
         }
         
         return new FileNameParts(directory, baseName, extension);
+    }
+    
+    public static FileNameParts getFileNameParts(Path path) {
+        return getFileNameParts(path.toFile());
+    }
+    
+    
+    public static final String INVALID_FILE_NAME_CHARS = "\\/:*\"<>|.";
+    public static boolean containsInvalidFileNameChars(String name) {
+        final int length = name.length();
+        for (int i = 0; i < length; ++i) {
+            if (INVALID_FILE_NAME_CHARS.indexOf(name.codePointAt(i)) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Determines if a string can represent a file name in both Windows, OsX and Linux.
+     * @param name  The file name. This should not have a directory.
+     * @return <code>true</code> if name is a valid file name under Windows, OsX, and Linux.
+     */
+    public static boolean isAcceptableFileName(String name) {
+        File file = new File(name);
+        FileNameParts fileNameParts = getFileNameParts(file);
+        if ((fileNameParts.directory != null) && !fileNameParts.directory.isEmpty()) {
+            return false;
+        }
+        
+        if ((fileNameParts.baseName == null) || fileNameParts.baseName.isEmpty()) {
+            return false;
+        }
+        if (containsInvalidFileNameChars(fileNameParts.baseName)) {
+            return false;
+        }
+        
+        if ((fileNameParts.extension != null) && !fileNameParts.extension.isEmpty()) {
+            String extension = fileNameParts.extension.substring(1, fileNameParts.extension.length());
+            if (containsInvalidFileNameChars(extension)) {
+                return false;
+            }
+        }
+        
+        return true;
     }
     
 
