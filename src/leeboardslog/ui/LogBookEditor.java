@@ -623,6 +623,64 @@ public class LogBookEditor {
         
     }
     
+    
+    /**
+     * Deletes a log entry from the log book.
+     * @param logEntry The log entry to delete.
+     */
+    public void deleteLogEntry(LogEntry logEntry) {
+        deleteLogEntries(new LogEntry[] { logEntry });
+    }
+    
+    /**
+     * Deletes one or more log entries from the log book.
+     * @param logEntries The log entries.
+     */
+    public void deleteLogEntries(LogEntry [] logEntries) {
+        DeleteLogEntryEdit edit = new DeleteLogEntryEdit(logEntries);
+        if (getUndoManager() != null) {
+            getUndoManager().addEdit(edit);
+        }        
+    }
+    
+    public class DeleteLogEntryEdit extends AbstractUndoableEdit {
+        final LogEntry [] logEntries;
+        
+        public DeleteLogEntryEdit(LogEntry [] logEntries) {
+            this.logEntries = logEntries;
+            applyEdit();
+        }
+        
+        void applyEdit() {
+            LogBook logBook = getLogBook();
+            if (logBook != null) {
+                logBook.removeLogEntries(this.logEntries);
+
+                if (getAutoSave()) {
+                    saveLogBook();
+                }
+            }            
+        }
+
+        @Override
+        public void redo() throws CannotRedoException {
+            super.redo();
+            applyEdit();
+        }
+
+        @Override
+        public void undo() throws CannotUndoException {
+            super.undo();
+            LogBook logBook = getLogBook();
+            if (logBook != null) {
+                logBook.addLogEntries(logEntries);
+
+                if (getAutoSave()) {
+                    saveLogBook();
+                }
+            }
+        }
+    }
 
     /**
      * Opens a new log book window for this editor.

@@ -126,6 +126,20 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
             }
         }
     }
+    
+    public boolean canDelete() {
+        ObservableList<LogEntry> selectedLogEntries = this.listView.getSelectionModel().getSelectedItems();
+        return !selectedLogEntries.isEmpty();
+    }
+    
+    public void deleteSelectedEntries() {
+        ObservableList<LogEntry> selectedLogEntries = this.listView.getSelectionModel().getSelectedItems();
+        if (selectedLogEntries.isEmpty()) {
+            return;
+        }
+        
+        this.logBookEditor.deleteLogEntries(selectedLogEntries.toArray(new LogEntry[selectedLogEntries.size()]));
+    }
 
     @Override
     public boolean canCloseLogBookEditor(LogBookEditor editor) {

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
@@ -164,6 +165,7 @@ public class LogBookViewController implements Initializable {
         }
     }
 
+
     
     
     public enum ViewType {
@@ -188,6 +190,25 @@ public class LogBookViewController implements Initializable {
         newLogEntry();
     }
 
+    @FXML
+    private void onDeleteLogEntry(ActionEvent event) {
+        switch (getActiveViewType()) {
+            case MONTHLY:
+                deleteMonthlyLogEntry();
+                break;
+            case ENTRY_LIST:
+                deleteEntryListLogEntry();
+                break;
+            case TIME_LINE:
+                deleteTimeLineLogEntry();
+                break;
+            default:
+                throw new AssertionError(getActiveViewType().name());
+            
+        }
+    }
+    
+    
     @FXML
     private void onMonthlyView(ActionEvent event) {
         setActiveViewType(ViewType.MONTHLY);
@@ -218,6 +239,25 @@ public class LogBookViewController implements Initializable {
         }
     }
     
+    private void deleteMonthlyLogEntry() {
+        LogBook logBook = this.logBookEditor.getLogBook();
+        if (logBook != null) {
+            LocalDate date = this.activeDate.get();
+            List<LogEntry> logEntries = new ArrayList<>();
+            logBook.getLogEntriesWithDate(date, logEntries);
+            
+            if (logEntries.size() == 1) {
+                // Straight delete...
+            }
+        }
+    }
+
+    private void deleteEntryListLogEntry() {
+        this.entryListViewControl.deleteSelectedEntries();
+    }
+
+    private void deleteTimeLineLogEntry() {
+    }
     
     private void onEditStart(MonthlyView.EditEvent<DayLogEntries> event) {
         LogBook logBook = this.logBookEditor.getLogBook();
@@ -261,6 +301,8 @@ public class LogBookViewController implements Initializable {
             return strings;
         }
     }
+    
+    
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -431,6 +473,8 @@ public class LogBookViewController implements Initializable {
         }
         if (this.monthlyViewControl != null) {
             if (logBook != null) {
+                // For now we do a brute force approach, just replace all the items.
+                this.monthlyViewControl.setItems(null);
                 this.monthlyViewControl.setItems(logBook.getLogEntriesByDate());
             }
             else {

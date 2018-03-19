@@ -179,7 +179,7 @@ public class LogEntryView {
                 return;
         }
         
-        this.logBookEditor.getLogBook().removeLogEntry(this.logEntry);
+        this.logBookEditor.deleteLogEntry(this.logEntry);
         
         closeView(false);
     }

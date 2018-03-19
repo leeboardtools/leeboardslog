@@ -51,7 +51,7 @@
                         <Menu fx:id="logEntriesMenu" mnemonicParsing="false" text="Log Entries">
                           <items>
                             <MenuItem mnemonicParsing="false" onAction="#onNewLogEntry" text="New Entry..." />
-                              <MenuItem mnemonicParsing="false" text="Delete Entry" />
+                              <MenuItem mnemonicParsing="false" onAction="#onDeleteLogEntry" text="Delete Entry" />
                               <SeparatorMenuItem fx:id="logEntryViewsSeparator" mnemonicParsing="false" />
                           </items>
                         </Menu>

@@ -64,14 +64,14 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
                     view.setActiveDate(control.getItem());
                 }
                 else if (!view.isEditing() && (event.getClickCount() == 2)) {
-                    view.startEdit();
-                    event.consume();
+                    onDoubleClick(event);
                 }
             }
         });
         
         updateSkin();
     }
+    
     
     private void setupSkin() {
         VBox vBox = new VBox();
@@ -103,6 +103,7 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
         
     }
     
+    
     protected void updateSkin() {
         LocalDate date = getSkinnable().getItem();
         if (date == null) {
@@ -121,5 +122,13 @@ public class DayCellSkin <T> extends SkinBase<DayCell<T>> {
 
             this.dayLabel.pseudoClassStateChanged(DayCell.PSEUDO_CLASS_FIRST_OF_MONTH, false);
         }
+    }
+    
+    
+    protected void onDoubleClick(MouseEvent event) {
+        MultiDayView<T> view = getSkinnable().getMultiDayView();
+        
+        view.startEdit();
+        event.consume();
     }
 }

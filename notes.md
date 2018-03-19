@@ -37,7 +37,7 @@
     - Add saving of diff information in logbookfile.
 
 # Bugs
-
+    - Adding a second entry to a date in Monthly view does not update the entry for the date.
 
 # Design Thoughts
 
