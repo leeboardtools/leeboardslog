@@ -180,9 +180,24 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
                 commitChanges();
             });
             
+            this.setOnMouseClicked((event)-> {
+                if (event.getClickCount() == 2) {
+                    openEditWindow();
+                }
+            });
+            
             setGraphic(this.titledPane);
             
             entryCells.add(this);
+        }
+        
+        public void openEditWindow() {
+            if (logBookEditor != null) {
+                LogEntryView view = logBookEditor.getLogEntryView(getItem().getGuid());
+                if (view != null) {
+                    view.showView();
+                }
+            }
         }
         
         public void commitChanges() {

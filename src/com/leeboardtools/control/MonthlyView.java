@@ -200,6 +200,12 @@ public class MonthlyView <T> extends MultiDayView<T> {
     }
     
     
+    public DayCell<T> getDateDayCell(LocalDate date) {
+        MonthlyViewSkin<T> skin = (MonthlyViewSkin<T>)(getSkin());
+        return skin.getDateDayCell(date);
+    }
+    
+    
     public interface SkinCallback<T> {
         void reloadDayRange(MonthlyView<T> view, int fromIndex, int toIndex);
     }

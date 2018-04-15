@@ -41,7 +41,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
+import javafx.geometry.Side;
+import javafx.scene.Node;
 import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -92,6 +95,10 @@ public class LogBookViewController implements Initializable {
     private Stage stage;
     
     private final ObjectProperty<LocalDate> activeDate = new SimpleObjectProperty<>(this, "activeDate", LocalDate.now());
+    
+    private ContextMenu logEntrySelectionMenu = new ContextMenu();
+    
+    
     @FXML
     private MenuItem undoMenuItem;
     @FXML
@@ -265,16 +272,7 @@ public class LogBookViewController implements Initializable {
             LocalDate date = this.activeDate.get();
             List<LogEntry> logEntries = new ArrayList<>();
             logBook.getLogEntriesWithDate(date, logEntries);
-            if (logEntries.isEmpty()) {
-                newLogEntry();
-            }
-            else if (logEntries.size() == 1) {
-                LogEntryView view = this.logBookEditor.getLogEntryView(logEntries.get(0).getGuid());
-                view.showView();
-            }
-            else {
-                // TODO: Need to select which entry to open...
-            }
+            openLogEntryView(date, logEntries);
             
             // We're going to go ahead and cancel the edit mode since we're not modal..
             this.monthlyViewControl.cancelEdit();
@@ -285,6 +283,34 @@ public class LogBookViewController implements Initializable {
     }
     
     private void onEditCancel(MonthlyView.EditEvent<DayLogEntries> event) {
+    }
+    
+    private void openLogEntryView(LocalDate date, List<LogEntry> logEntries) {
+        if (logEntries.isEmpty()) {
+            newLogEntry();
+        }
+        else {
+            // TODO: Need to select which entry to open...
+            this.logEntrySelectionMenu.getItems().clear();
+            MenuItem newEntryItem = new MenuItem(ResourceSource.getString("Menu.NewLogEntry"));
+            newEntryItem.setOnAction((event) -> {
+                newLogEntry();
+            });
+            this.logEntrySelectionMenu.getItems().add(newEntryItem);
+            
+            logEntries.forEach((logEntry) -> {
+                MenuItem menuItem = new MenuItem(logEntry.getHeadingText(true));
+                menuItem.setOnAction((event) -> {
+                    LogEntryView view = this.logBookEditor.getLogEntryView(logEntry.getGuid());
+                    view.showView();
+                });
+                this.logEntrySelectionMenu.getItems().add(menuItem);
+            });
+            
+            Node dayCell = this.monthlyViewControl.getDateDayCell(date);
+            this.logEntrySelectionMenu.show(dayCell, Side.LEFT, 0, 0);
+        }
+        
     }
     
     
@@ -401,7 +427,7 @@ public class LogBookViewController implements Initializable {
         });
         
         this.activeViewType.set(ViewType.MONTHLY);
-        this.activeViewType.set(ViewType.ENTRY_LIST);
+        //this.activeViewType.set(ViewType.ENTRY_LIST);
     }
     
     

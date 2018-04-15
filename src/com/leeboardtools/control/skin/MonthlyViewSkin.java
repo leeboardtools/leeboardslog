@@ -21,6 +21,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
@@ -189,6 +190,14 @@ public class MonthlyViewSkin<T> extends SkinBase<MonthlyView> {
     
     final int getDayCellIndex(int dayCellRow, int dayCellCol) {
         return dayCellRow * 7 + dayCellCol;
+    }
+    
+    public final DayCell<T> getDateDayCell(LocalDate date) {
+        int index = (int)this.dayCells[0].getItem().until(date, ChronoUnit.DAYS);
+        if ((index < 0) || (index >= this.dayCells.length)) {
+            return null;
+        }
+        return this.dayCells[index];
     }
     
     protected final void updateFirstDayOfWeek() {
