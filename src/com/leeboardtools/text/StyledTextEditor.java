@@ -36,6 +36,7 @@ public class StyledTextEditor extends StackPane {
         this.textArea.setPrefSize(USE_COMPUTED_SIZE, USE_COMPUTED_SIZE);
         this.textArea.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         this.textArea.setPrefRowCount(4);
+        this.textArea.setWrapText(true);
         
         // TEST!!!
         this.textArea.focusedProperty().addListener((property, oldValue, newValue)-> {
