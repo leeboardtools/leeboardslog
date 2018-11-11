@@ -422,7 +422,7 @@ public class LogBook {
         final Collection<LogEntry> destEntries = logEntries;
         
         validEndKeys.forEach((key, entryMaster) -> {
-            TimePeriod.Overlap overlap = entryMaster.logEntry.getTimePeriod().getOverlap(timePeriod);
+            TimePeriod.Overlap overlap = entryMaster.logEntry.getTimePeriod().getOverlap(timePeriod, null);
             switch (overlap) {
                 case OTHER_START :
                 case OTHER_END :

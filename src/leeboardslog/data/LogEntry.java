@@ -67,6 +67,7 @@ import org.json.JSONObject;
  */
 public class LogEntry {
     public static final String GUID_KEY = "guid";
+    public static final String VERSION_KEY = "version";
     public static final String TIME_PERIOD_PROP = "timePeriod";
     public static final String ZONE_ID_PROP = "zoneId";
     public static final String TITLE_PROP = "title";
@@ -343,8 +344,20 @@ public class LogEntry {
      */
     public static LogEntry fromJSON(JSONObject jsonObject) throws JSONException {
         String guid = jsonObject.getString(GUID_KEY);
-        TimePeriod timePeriod = TimePeriod.fromJSON(jsonObject, TIME_PERIOD_PROP);
+        int version = 0;
+        if (jsonObject.has(VERSION_KEY)) {
+            version = jsonObject.getInt(VERSION_KEY);
+        }
+        
+        TimePeriod timePeriod = TimePeriod.fromJSON(jsonObject, TIME_PERIOD_PROP);        
         ZoneId zoneId = TimePeriod.optZoneIdFromJSON(jsonObject, ZONE_ID_PROP, null);
+        if (version == 0) {
+            if (!timePeriod.isFullDays() && timePeriod.isFullDays(zoneId)) {
+                timePeriod = TimePeriod.fromEdgeDates(timePeriod.getLocalStartDate(zoneId), 
+                    timePeriod.getLocalEndDate(zoneId).minusDays(1));
+            }
+        }
+        
         LogEntry logEntry = new LogEntry(guid, timePeriod, zoneId);
         
         logEntry.setTitle(jsonObject.optString(TITLE_PROP, null));
@@ -387,6 +400,8 @@ public class LogEntry {
      */
     public void toJSON(JSONObject jsonObject) {
         jsonObject.put(GUID_KEY, this.guid);
+//        jsonObject.put(VERSION_KEY, 1);
+        
         this.timePeriod.get().toJSON(jsonObject, TIME_PERIOD_PROP);
         TimePeriod.zoneIdToJSON(jsonObject, ZONE_ID_PROP, this.zoneId.get());
         jsonObject.put(TITLE_PROP, this.title.get());
@@ -596,7 +611,7 @@ public class LogEntry {
             zoneId = ZoneId.systemDefault();
         }
         
-        updateTimeSettings(TimePeriod.fromEdgeDates(date, date, zoneId), zoneId);
+        updateTimeSettings(TimePeriod.fromEdgeDates(date, date), zoneId);
     }
 
     /**

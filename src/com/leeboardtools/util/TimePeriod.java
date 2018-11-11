@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.time.zone.ZoneRulesException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,11 +34,16 @@ import org.json.JSONObject;
 
 /**
  * Immutable class that represents a period in time, with a begin time and an end time, which may be the same.
+ * Time periods can either represent full days via {@link LocalDate} or instants in time,
+ * via {@link Instant}. If representing full days, the days represented are independent
+ * of time zone.
  * @author Albert Santos
  */
 public class TimePeriod implements Comparable <TimePeriod> {
     final private Instant startInstant;
     final private Instant endInstant;
+    final private LocalDate firstFullDay;
+    final private long fullDayCount;
     
     /**
      * Constructor. The start instant must be before or equal to the end instant.
@@ -47,6 +53,20 @@ public class TimePeriod implements Comparable <TimePeriod> {
     protected TimePeriod(Instant startInstant, Instant endInstant) {
         this.startInstant = startInstant;
         this.endInstant = endInstant;
+        this.firstFullDay = null;
+        this.fullDayCount = 0;
+    }
+    
+    /**
+     * Constructor for the full days version.
+     * @param startFullDay  The first day of the time period.
+     * @param fullDayCount The number of full days. This must be &gt 0.
+     */
+    protected TimePeriod(LocalDate startFullDay, long fullDayCount) {
+        this.startInstant = null;
+        this.endInstant = null;
+        this.firstFullDay = startFullDay;
+        this.fullDayCount = fullDayCount;
     }
 
     @Override
@@ -54,6 +74,8 @@ public class TimePeriod implements Comparable <TimePeriod> {
         int hash = 3;
         hash = 53 * hash + Objects.hashCode(this.startInstant);
         hash = 53 * hash + Objects.hashCode(this.endInstant);
+        hash = 53 * hash + Objects.hashCode(this.firstFullDay);
+        hash = 53 * hash + Objects.hashCode(this.fullDayCount);
         return hash;
     }
 
@@ -73,6 +95,12 @@ public class TimePeriod implements Comparable <TimePeriod> {
             return false;
         }
         if (!Objects.equals(this.endInstant, other.endInstant)) {
+            return false;
+        }
+        if (!Objects.equals(this.firstFullDay, other.firstFullDay)) {
+            return false;
+        }
+        if (this.fullDayCount != other.fullDayCount) {
             return false;
         }
         return true;
@@ -103,6 +131,14 @@ public class TimePeriod implements Comparable <TimePeriod> {
             zoneId = ZoneId.systemDefault();
         }
         
+        if (this.firstFullDay != null) {
+            if (this.fullDayCount > 1) {
+                LocalDate endDate = this.firstFullDay.plusDays(this.fullDayCount);
+                return this.firstFullDay.toString() + " -> " + endDate.toString();
+            }
+            return this.firstFullDay.toString();
+        }
+        
         LocalDateTime startDateTime = LocalDateTime.ofInstant(this.startInstant, zoneId);
         LocalDateTime endDateTime = LocalDateTime.ofInstant(this.endInstant, zoneId);
         
@@ -127,7 +163,7 @@ public class TimePeriod implements Comparable <TimePeriod> {
     
     /**
      * Retrieves the instant defining the start of the time period.
-     * @return The instant.
+     * @return The instant, <code>null</code> if the time period represents full days..
      */
     public final Instant getStartInstant() {
         return this.startInstant;
@@ -136,10 +172,48 @@ public class TimePeriod implements Comparable <TimePeriod> {
     /**
      * Retrieves the instant defining the end of the time period. This is always
      * the same as or after the start instant.
-     * @return The instant.
+     * @return The instant, <code>null</code> if the time period represents full days..
      */
     public final Instant getEndInstant() {
         return this.endInstant;
+    }
+    
+    /**
+     * Determines if the time period represents full days.
+     * @return <code>true</code> if the time period represents full days.
+     */
+    public final boolean isFullDays() {
+        return this.firstFullDay != null;
+    }
+    
+    /**
+     * Retrieves the first full day of the time period if the time period represents
+     * full days.
+     * @return The first full day, <code>null</code> if the time period does not represent full days.
+     */
+    public final LocalDate getFirstFullDay() {
+        return this.firstFullDay;
+    }
+    
+    /**
+     * Retrieves the last full day of the time period if the time period represents
+     * full days.
+     * @return The last full day, <code>null</code> if the time period does not represent full days.
+     */
+    public final LocalDate getLastFullDay() {
+        if (this.firstFullDay != null) {
+            return this.firstFullDay.plusDays(this.fullDayCount - 1);
+        }
+        return null;
+    }
+    
+    /**
+     * Returns the number of full days represented by the time period if the time period
+     * represents full days.
+     * @return The number of full days, 0 if the time period does not represent full days.
+     */
+    public final long getFullDayCount() {
+        return this.fullDayCount;
     }
     
     /**
@@ -147,12 +221,39 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return The duration, this always &ge; 0.
      */
     public final Duration getDuration() {
+        if (this.firstFullDay != null) {
+            return Duration.ofDays(this.fullDayCount);
+        }
         return Duration.between(this.startInstant, endInstant);
+    }
+    
+    /**
+     * Retrieves a time period, which may be <code>this</code>, that is represented
+     * as time instants and not full days.
+     * @param zoneId    Optional zone id, if <code>null</code> the system default will be used.
+     * @return The time period.
+     */
+    public final TimePeriod asInstantTimePeriod(ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            if (zoneId == null) {
+                zoneId = ZoneId.systemDefault();
+            }
+            Instant myStartInstant = localDateToStartInstant(this.firstFullDay, zoneId);
+            Instant myEndInstant = localDateToEndInstant(this.firstFullDay.plusDays(this.fullDayCount - 1), zoneId);
+            return new TimePeriod(myStartInstant, myEndInstant);
+        }
+        return this;
     }
 
     /**
      * Compares this time period to another time period. The ordering is first by the
-     * start instants, and if those are the same then by the end instants.
+     * starts of the time periods, and if those are the same then by the ends.
+     * If comparing a time period with full days to a time period without full days,
+     * the first day of the full days time period will be treated as before the start
+     * day of the instant time period if the start local date of the instant time period,
+     * which is obtained using the system default zone id, is the same as or after the
+     * first day of the full days time period. Otherwise it is treated as after. This
+     * means that 0 is never returned if one time period is full days and the other is not.
      * @param o The time period to compare to.
      * @return &lt; 0 if the start instant of this time period is before the start instant
      * of the other time period, or if the start instants are the same but the end instant
@@ -161,7 +262,29 @@ public class TimePeriod implements Comparable <TimePeriod> {
      */
     @Override
     public int compareTo(TimePeriod o) {
-        int result = this.startInstant.compareTo(o.startInstant);
+        int result;
+        
+        if (this.firstFullDay != null) {
+            if (o.firstFullDay != null) {
+                result = this.firstFullDay.compareTo(o.firstFullDay);
+                if (result != 0) {
+                    return result;
+                }
+                
+                long lResult = this.fullDayCount - o.fullDayCount;
+                return (lResult < 0) ? -1 : (lResult > 0) ? 1 : 0;
+            }
+
+            ZoneId zoneId = ZoneId.systemDefault();
+            LocalDate otherStartDate = o.getLocalStartDate(zoneId);
+            return (!this.firstFullDay.isAfter(otherStartDate)) ? -1 : 1;
+        }
+        else if (o.firstFullDay != null) {
+            result = o.compareTo(this);
+            return -result;
+        }
+        
+        result = this.startInstant.compareTo(o.startInstant);
         if (result != 0) {
             return result;
         }
@@ -183,9 +306,15 @@ public class TimePeriod implements Comparable <TimePeriod> {
     /**
      * Determines when an instant in time is relative to the time period.
      * @param instant   The instant of interest.
+     * @param zoneId    The zone id to use to convert full day time periods, if 
+     * <code>null</code> {@link ZoneId#systemDefault() } is called to obtain the zone id.
      * @return The relationship of instant to the time period.
      */
-    public final Relation getTimeRelation(Instant instant) {
+    public final Relation getTimeRelation(Instant instant, ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            return asInstantTimePeriod(zoneId).getTimeRelation(instant, zoneId);
+        }
+        
         int result = instant.compareTo(this.startInstant);
         if (result <= 0) {
             return (result < 0) ? Relation.BEFORE : Relation.ON_START_EDGE;
@@ -209,13 +338,13 @@ public class TimePeriod implements Comparable <TimePeriod> {
         if (zoneId == null) {
             zoneId = ZoneId.systemDefault();
         }
-        return getTimeRelation(Instant.from(dateTime.atZone(zoneId)));
+        return getTimeRelation(dateTime.atZone(zoneId).toInstant(), zoneId);
     }
     
     /**
      * Defines the overlap relationship between two time periods.
      * TODO Need to refine this a bit more when the edges land on each other.
-     * If an end is equal to a start, then its a TOUCH_END or TOUCH_START.
+     * If an end is equal to a start, then it's a TOUCH_END or TOUCH_START.
      */
     public static enum Overlap {
         /**
@@ -320,9 +449,18 @@ public class TimePeriod implements Comparable <TimePeriod> {
     /**
      * Determines the overlap between this time period and another time period.
      * @param other The time period to compare against.
+     * @param zoneId    The zone id to use when resolving full day time periods,
+     * if <code>null</code> {@link ZoneId#systemDefault() } is called to obtain the zone id.
      * @return The type of overlap.
      */
-    public final Overlap getOverlap(TimePeriod other) {
+    public final Overlap getOverlap(TimePeriod other, ZoneId zoneId) {
+        if (other.firstFullDay != null) {
+            other = other.asInstantTimePeriod(zoneId);
+        }
+        if (this.firstFullDay != null) {
+            return asInstantTimePeriod(zoneId).getOverlap(other, zoneId);
+        }
+
         if (this.endInstant.isBefore(other.startInstant) || this.startInstant.isAfter(other.endInstant)) {
             return Overlap.NONE;
         }
@@ -380,8 +518,8 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return <code>true</code> if any portion of the time period falls within date.
      */
     public final boolean containsDate(LocalDate date, ZoneId zoneId) {
-        TimePeriod datePeriod = fromEdgeDates(date, date, zoneId);
-        Overlap overlap = this.getOverlap(datePeriod);
+        TimePeriod datePeriod = fromEdgeDates(date, date);
+        Overlap overlap = this.getOverlap(datePeriod, zoneId);
         switch (overlap) {
             case NONE :
             case TOUCH_OTHER_START :
@@ -401,6 +539,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return The collection containing the local dates.
      */
     public final Collection<LocalDate> getDates(Collection<LocalDate> dates, ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            return asInstantTimePeriod(zoneId).getDates(dates, zoneId);
+        }
+        
         if (dates == null) {
             dates = new ArrayList<>();
         }
@@ -520,32 +662,45 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * from the start of day of dateA and ending with the end of day of dateB.
      * @param dateA One of the edge days.
      * @param dateB The other edge day.
-     * @param zoneId    The zone id of the dates, if <code>null</code> {@link ZoneId#systemDefault() } is
-     * called to obtain the zone id.
      * @return The time period.
      */
-    public static TimePeriod fromEdgeDates(LocalDate dateA, LocalDate dateB, ZoneId zoneId) {
+    public static TimePeriod fromEdgeDates(LocalDate dateA, LocalDate dateB) {
         if (dateA.isAfter(dateB)) {
             LocalDate tmpDate = dateA;
             dateA = dateB;
             dateB = tmpDate;
         }
         
-        Instant startInstant = localDateToStartInstant(dateA, zoneId);
-        Instant endInstant = localDateToEndInstant(dateB, zoneId);
-        
-        return fromEdgeTimes(startInstant, endInstant);
+        long fullDayCount = dateA.until(dateB, ChronoUnit.DAYS) + 1;
+        return new TimePeriod(dateA, fullDayCount);
     }
     
-    
+
     /**
      * Obtains an instance of TimePeriod that starts with the earliest time covered
-     * by two time periods and the latest time covered by the two time periods.
+     * by two time periods and ends with the latest time covered by the two time periods.
      * @param periodA   The first time period.
      * @param periodB   The second time period.
      * @return The new time period.
      */
     public static TimePeriod joinPeriods(TimePeriod periodA, TimePeriod periodB) {
+        if ((periodA.firstFullDay != null) && (periodB.firstFullDay != null)) {
+            if (periodA.firstFullDay.isAfter(periodB.firstFullDay)) {
+                TimePeriod tmpTimePeriod = periodA;
+                periodA = periodB;
+                periodB = tmpTimePeriod;
+            }
+            LocalDate lastFullDay = periodB.getLastFullDay();
+            LocalDate aLastFullDay = periodA.getLastFullDay();
+            if (aLastFullDay.isAfter(lastFullDay)) {
+                lastFullDay = aLastFullDay;
+            }
+            return fromEdgeDates(periodA.firstFullDay, lastFullDay);
+        }
+        
+        periodA = periodA.asInstantTimePeriod(null);
+        periodB = periodB.asInstantTimePeriod(null);
+        
         Instant startInstant = (periodA.startInstant.isBefore(periodB.startInstant))
                 ? periodA.startInstant : periodB.startInstant;
         Instant endInstant = (periodA.endInstant.isAfter(periodB.endInstant))
@@ -614,6 +769,33 @@ public class TimePeriod implements Comparable <TimePeriod> {
     }
     
     /**
+     * Helper that writes a {@link LocalDate}'s state to a JSON object that can be read 
+     * back in with {@link TimePeriod#localDateFromJSON(org.json.JSONObject, java.lang.String) }
+     * @param jsonObject    The JSON object.
+     * @param key   The key for the local date's state within the JSON object.
+     * @param localDate The local date to be written, may be <code>null</code>.
+     */
+    public static void localDateToJSON(JSONObject jsonObject, String key, LocalDate localDate) {
+        jsonObject.put(key, (localDate == null) ? JSONObject.NULL : localDate);
+    }
+    
+    /**
+     * Helper that retrieves an {@link LocalDate} based upon the state stored in a JSON object.
+     * @param jsonObject    The JSON object.
+     * @param key   The key for the local date's state within the JSON object.
+     * @return
+     * @throws JSONException    if there is no string value for the key.
+     * @throws DateTimeParseException   if the key's value could not be parsed into a local date.
+     */
+    public static LocalDate localDateFromJSON(JSONObject jsonObject, String key) throws JSONException, DateTimeParseException {
+        String text = jsonObject.getString(key);
+        if (text == JSONObject.NULL) {
+            return null;
+        }
+        return LocalDate.parse(text);
+    }
+    
+    /**
      * Helper that writes a {@link ZoneId}'s id to a JSON object that can be read back in
      * with {@link TimePeriod#optZoneIdFromJSON(org.json.JSONObject, java.lang.String, java.time.ZoneId) }.
      * @param jsonObject    The JSON object.
@@ -650,8 +832,14 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @param jsonObject The JSON object.
      */
     public final void toJSON(JSONObject jsonObject) {
-        instantToJSON(jsonObject, "startInstant", startInstant);
-        instantToJSON(jsonObject, "endInstant", endInstant);
+        if (this.firstFullDay != null) {
+            localDateToJSON(jsonObject, "startFullDay", firstFullDay);
+            jsonObject.put("fullDayCount", fullDayCount);
+        }
+        else {
+            instantToJSON(jsonObject, "startInstant", startInstant);
+            instantToJSON(jsonObject, "endInstant", endInstant);
+        }
     }
     
     /**
@@ -663,6 +851,11 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @throws DateTimeParseException   if the key's value could not be parsed into an instant.
      */
     public static TimePeriod fromJSON(JSONObject jsonObject) throws JSONException, DateTimeParseException {
+        if (jsonObject.has("startFullDay")) {
+            LocalDate startFullDay = localDateFromJSON(jsonObject, "startFullDay");
+            long fullDayCount = jsonObject.getLong("fullDayCount");
+            return new TimePeriod(startFullDay, fullDayCount);
+        }
         Instant startInstant = instantFromJSON(jsonObject, "startInstant");
         Instant endInstant = instantFromJSON(jsonObject, "endInstant");
         return new TimePeriod(startInstant, endInstant);
@@ -719,6 +912,9 @@ public class TimePeriod implements Comparable <TimePeriod> {
     public static class StartComparator implements Comparator <TimePeriod> {
         @Override
         public int compare(TimePeriod o1, TimePeriod o2) {
+            o1 = o1.asInstantTimePeriod(null);
+            o2 = o2.asInstantTimePeriod(null);
+
             int result = o1.startInstant.compareTo(o2.startInstant);
             if (result != 0) {
                 return result;
@@ -735,6 +931,9 @@ public class TimePeriod implements Comparable <TimePeriod> {
     public static class EndComparator implements Comparator <TimePeriod> {
         @Override
         public int compare(TimePeriod o1, TimePeriod o2) {
+            o1 = o1.asInstantTimePeriod(null);
+            o2 = o2.asInstantTimePeriod(null);
+
             int result = o1.endInstant.compareTo(o2.endInstant);
             if (result != 0) {
                 return result;
@@ -751,6 +950,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return The start date-time.
      */
     public final LocalDateTime getLocalStartDateTime(ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            return this.firstFullDay.atStartOfDay();
+        }
+        
         if (zoneId == null) {
             zoneId = ZoneId.systemDefault();
         }
@@ -772,6 +975,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return The start date.
      */
     public final LocalDate getLocalStartDate(ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            return this.firstFullDay;
+        }
+        
         return getLocalStartDateTime(zoneId).toLocalDate();
     }
     
@@ -791,6 +998,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return The end date-time.
      */
     public final LocalDateTime getLocalEndDateTime(ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            return this.firstFullDay.plusDays(this.fullDayCount).atStartOfDay();
+        }
+        
         if (zoneId == null) {
             zoneId = ZoneId.systemDefault();
         }
@@ -812,6 +1023,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return The end date.
      */
     public final LocalDate getLocalEndDate(ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            this.firstFullDay.plusDays(this.fullDayCount);
+        }
+        
         return getLocalEndDateTime(zoneId).toLocalDate();
     }
     
@@ -831,6 +1046,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return The potentially adjusted end date.
      */
     public final LocalDate getAdjustedLocalEndDate(ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            return this.firstFullDay.plusDays(this.fullDayCount - 1);
+        }
+        
         LocalDate endDate = getLocalEndDate(zoneId);
         if (isFullDays(zoneId)) {
             endDate = endDate.minusDays(1);
@@ -848,6 +1067,10 @@ public class TimePeriod implements Comparable <TimePeriod> {
      * @return <code>true</code> if the time period represents full days.
      */
     public final boolean isFullDays(ZoneId zoneId) {
+        if (this.firstFullDay != null) {
+            return true;
+        }
+        
         LocalDateTime startDateTime = getLocalStartDateTime(zoneId);
         if (!startDateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
             return false;

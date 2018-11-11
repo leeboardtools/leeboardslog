@@ -16,6 +16,7 @@
 package leeboardslog.ui;
 
 import com.leeboardtools.text.StyledTextEditor;
+import com.leeboardtools.util.TimePeriod;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -112,7 +113,7 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
         LocalDate activeDate = (this.activeDateProperty == null) ? null : this.activeDateProperty.get();
         if ((activeDate != null) && (logBookEditor != null) && (logBookEditor.getLogBook() != null)) {
             LogEntry tmpLogEntry = new LogEntry();
-            tmpLogEntry.setDate(this.activeDateProperty.get(), logBookEditor.getLogBook().getCurrentZoneId());
+            tmpLogEntry.setDate(this.activeDateProperty.get());
             ObservableList<LogEntry> logEntries = logBookEditor.getLogBook().getLogEntriesByStart();
             int index = Collections.binarySearch(logEntries, tmpLogEntry, new LogEntry.StartComparator());
             // Result of binarySearch: index = -insertionPoint - 1
@@ -219,18 +220,28 @@ public class EntryListView extends StackPane implements LogBookEditor.Listener {
                 this.titledPane.setVisible(false);
             }
             else {
-                ZoneId zoneId = logBookEditor.getLogBook().getCurrentZoneId();
-                LocalDateTime dateTime = item.getTimePeriod().getLocalStartDateTime(zoneId);
                 String timeStamp;
-                if (item.getTimePeriod().isFullDays(zoneId)) {
-                    timeStamp = dateTime.format(dateOnlyFormatter);
-                    if (item.getTimePeriod().getDuration().toDays() > 1) {
-                        LocalDate endDate = item.getTimePeriod().getLocalEndDate(zoneId);
-                        timeStamp += endDate.format(dateOnlyFormatter);
+                TimePeriod timePeriod = item.getTimePeriod();
+                
+                if (timePeriod.isFullDays()) {
+                    timeStamp = timePeriod.getFirstFullDay().format(dateOnlyFormatter);
+                    if (timePeriod.getFullDayCount() > 1) {
+                        timeStamp += timePeriod.getLastFullDay().format(dateOnlyFormatter);
                     }
                 }
                 else {
-                    timeStamp = dateTime.format(dateTimeFormatter);
+                    ZoneId zoneId = logBookEditor.getLogBook().getCurrentZoneId();
+                    LocalDateTime dateTime = timePeriod.getLocalStartDateTime(zoneId);
+                    if (timePeriod.isFullDays(zoneId)) {
+                        timeStamp = dateTime.format(dateOnlyFormatter);
+                        if (timePeriod.getDuration().toDays() > 1) {
+                            LocalDate endDate = timePeriod.getLocalEndDate(zoneId);
+                            timeStamp += endDate.format(dateOnlyFormatter);
+                        }
+                    }
+                    else {
+                        timeStamp = dateTime.format(dateTimeFormatter);
+                    }
                 }
                 this.titledPane.setText(timeStamp + item.getHeadingText(false));
                 this.titledPane.setVisible(true);

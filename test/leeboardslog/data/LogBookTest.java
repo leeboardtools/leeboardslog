@@ -115,11 +115,11 @@ public class LogBookTest {
             newLogEntry(2017, 1, 3, 14, 15, 17, zoneId, "Entry 2"),
             newLogEntry(2017, 1, 3, 15, 0, 0, zoneId, "Entry 3"),
             newLogEntry(2017, 1, 4, 3, 0, 1, zoneId, "Entry 4"),
-            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 15), LocalDate.of(2017, 1, 20), zoneId), zoneId, "Entry 5"),
-            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 15), LocalDate.of(2017, 1, 17), zoneId), zoneId, "Entry 6"),
-            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 17), LocalDate.of(2017, 1, 20), zoneId), zoneId, "Entry 7"),
-            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 21), LocalDate.of(2017, 1, 21), zoneId), zoneId, "Entry 8"),
-            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 21), LocalDate.of(2017, 1, 21), zoneId), zoneId, "Entry 9"),
+            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 15), LocalDate.of(2017, 1, 20)), zoneId, "Entry 5"),
+            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 15), LocalDate.of(2017, 1, 17)), zoneId, "Entry 6"),
+            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 17), LocalDate.of(2017, 1, 20)), zoneId, "Entry 7"),
+            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 21), LocalDate.of(2017, 1, 21)), zoneId, "Entry 8"),
+            newLogEntry(TimePeriod.fromEdgeDates(LocalDate.of(2017, 1, 21), LocalDate.of(2017, 1, 21)), zoneId, "Entry 9"),
         };
     }
     

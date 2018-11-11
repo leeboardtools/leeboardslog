@@ -153,7 +153,7 @@ public class TimePeriodEditController {
             ZoneId zoneIdToUse = getZoneIdToUse();
             LocalDate startDate = currentPeriod.getStartInstant().atZone(zoneIdToUse).toLocalDate();
             LocalDate endDate = currentPeriod.getEndInstant().atZone(zoneIdToUse).toLocalDate();
-            setTimePeriod(TimePeriod.fromEdgeDates(startDate, endDate, zoneIdToUse));
+            setTimePeriod(TimePeriod.fromEdgeDates(startDate, endDate));
         }
         else {
             try {
@@ -195,45 +195,49 @@ public class TimePeriodEditController {
         }
         
         ZoneId currentZoneId = getZoneIdToUse();
-
-        LocalDateTime startDateTime = currentPeriod.getStartInstant().atZone(currentZoneId).toLocalDateTime();
-        LocalDateTime endDateTime = currentPeriod.getEndInstant().atZone(currentZoneId).toLocalDateTime();
-
-        LocalDate startDate = startDateTime.toLocalDate();
-        LocalTime startTime = startDateTime.toLocalTime();
-
-        LocalDate endDate = endDateTime.toLocalDate();
-        LocalTime endTime = endDateTime.toLocalTime();
         
-        boolean isAllDay = LocalTime.MIDNIGHT.equals(startTime) && LocalTime.MIDNIGHT.equals(endTime);
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
+        LocalDate startDate = null;
+        LocalTime startTime = null;
+        LocalDate endDate = null;
+        LocalTime endTime = null;
         
+        boolean isAllDay;
+        if (currentPeriod.isFullDays()) {
+            startDate = currentPeriod.getFirstFullDay();
+            endDate = currentPeriod.getLastFullDay();
+            isAllDay = true;
+        }
+        else {
+            startDateTime = currentPeriod.getStartInstant().atZone(currentZoneId).toLocalDateTime();
+            endDateTime = currentPeriod.getEndInstant().atZone(currentZoneId).toLocalDateTime();
+
+            startDate = startDateTime.toLocalDate();
+            startTime = startDateTime.toLocalTime();
+
+            endDate = endDateTime.toLocalDate();
+            endTime = endDateTime.toLocalTime();
+
+            isAllDay = false;
+        }
+
         if (newStartDate != null) {
             if (newStartDate.isAfter(endDate)) {
                 endDate = newStartDate;
-                if (isAllDay) {
-                    endDate = endDate.plusDays(1);
-                }
             }
             startDate = newStartDate;
         }
         if (newEndDate != null) {
             if (newEndDate.isBefore(startDate)) {
                 startDate = newEndDate;
-                if (isAllDay) {
-                    startDate = startDate.minusDays(1);
-                }
             }
             endDate = newEndDate;
-            
-            if (isAllDay) {
-                // updateFromValues() will back up the end date for appearances...
-                endDate = endDate.plusDays(1);
-            }
         }
         
         if (newStartTime != null) {
             if (startDate.equals(endDate)) {
-                if (newStartTime.isAfter(endTime) || newStartTime.equals(endTime)) {
+                if ((endTime == null) || newStartTime.isAfter(endTime) || newStartTime.equals(endTime)) {
                     endTime = newStartTime.plusHours(1);
                 }
             }
@@ -260,16 +264,20 @@ public class TimePeriodEditController {
             // Don't have to worry about starting from isAllDay because we won't change
             // the end time unless we're already not all day...
         }
-        
-        startDateTime = LocalDateTime.of(startDate, startTime);
-        endDateTime = LocalDateTime.of(endDate, endTime);
 
         if (isNewZoneId) {
             this.setZoneId(newZoneId);
             currentZoneId = newZoneId;
         }
         
-        this.setTimePeriod(TimePeriod.fromEdgeTimes(startDateTime, endDateTime, currentZoneId));
+        if (startTime != null) {
+            startDateTime = LocalDateTime.of(startDate, startTime);
+            endDateTime = LocalDateTime.of(endDate, endTime);
+            this.setTimePeriod(TimePeriod.fromEdgeTimes(startDateTime, endDateTime, currentZoneId));
+        }
+        else {
+            this.setTimePeriod(TimePeriod.fromEdgeDates(startDate, endDate));
+        }
     }
     
     protected final ZoneId getZoneIdToUse() {
@@ -289,35 +297,38 @@ public class TimePeriodEditController {
             if (currentPeriod != null) {
                 ZoneId currentZoneId = this.getZoneId();
                 ZoneId zoneIdToUse = (currentZoneId == null) ? ZoneId.systemDefault() : currentZoneId;
+                
+                LocalDate startDate;
+                LocalDate endDate;
+                if (currentPeriod.isFullDays()) {
+                    startDate = currentPeriod.getFirstFullDay();
+                    endDate = currentPeriod.getLastFullDay();
 
-                LocalDateTime startDateTime = currentPeriod.getStartInstant().atZone(zoneIdToUse).toLocalDateTime();
-                LocalTime startTime = startDateTime.toLocalTime();
-
-                LocalDateTime endDateTime = currentPeriod.getEndInstant().atZone(zoneIdToUse).toLocalDateTime();
-                LocalTime endTime = endDateTime.toLocalTime();
-
-                this.startDatePicker.setDisable(false);
-                this.startDatePicker.setValue(startDateTime.toLocalDate());
-
-                this.startTimePicker.setDisable(false);
-
-                if (LocalTime.MIDNIGHT.equals(startTime)
-                 && LocalTime.MIDNIGHT.equals(endTime)) {
                     this.startTimePicker.setValue(this.allDayTimeLabel);
-
                     this.endTimePicker.setDisable(true);
-
-                    endDateTime = endDateTime.minusDays(1);
                 }
                 else {
+                    LocalDateTime startDateTime = currentPeriod.getStartInstant().atZone(zoneIdToUse).toLocalDateTime();
+                    startDate = startDateTime.toLocalDate();
+                    LocalTime startTime = startDateTime.toLocalTime();
+
+                    LocalDateTime endDateTime = currentPeriod.getEndInstant().atZone(zoneIdToUse).toLocalDateTime();
+                    endDate = endDateTime.toLocalDate();
+                    LocalTime endTime = endDateTime.toLocalTime();
+
                     this.startTimePicker.setValue(startTime.format(this.timeFormatter));
 
                     this.endTimePicker.setDisable(false);
                     this.endTimePicker.setValue(endTime.format(this.timeFormatter));
                 }
 
+                this.startDatePicker.setDisable(false);
+                this.startDatePicker.setValue(startDate);
+
+                this.startTimePicker.setDisable(false);
+
                 this.endDatePicker.setDisable(false);
-                this.endDatePicker.setValue(endDateTime.toLocalDate());
+                this.endDatePicker.setValue(endDate);
 
                 if (this.timeZonePicker != null) {
                     if (currentZoneId == null) {

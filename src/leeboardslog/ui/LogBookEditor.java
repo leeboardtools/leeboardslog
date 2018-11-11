@@ -523,7 +523,7 @@ public class LogBookEditor {
         if (timePeriod == null) {
             LogBook logBook = getLogBookFile().getLogBook();
             LocalDate now = LocalDate.now();
-            timePeriod = TimePeriod.fromEdgeDates(now, now, logBook.getCurrentZoneId());
+            timePeriod = TimePeriod.fromEdgeDates(now, now);
         }
         logEntry.setTimePeriod(timePeriod);
         

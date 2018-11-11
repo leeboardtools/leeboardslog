@@ -227,10 +227,10 @@ public class LogEntryTest {
         System.out.println("setDate");
         LocalDate date = LocalDate.of(2017, 02, 03);
         ZoneId zoneId = ZoneId.of("Europe/Paris");
-        TimePeriod timePeriod = TimePeriod.fromEdgeDates(date, date, zoneId);
+        TimePeriod timePeriod = TimePeriod.fromEdgeDates(date, date);
         
         LogEntry logEntry = new LogEntry();
-        logEntry.setDate(date, zoneId);
+        logEntry.setDate(date);
         assertEquals(timePeriod, logEntry.getTimePeriod());
     }
 
@@ -242,7 +242,7 @@ public class LogEntryTest {
         System.out.println("setDate");
         LocalDate date = LocalDate.of(2017, 02, 03);
         ZoneId zoneId = ZoneId.systemDefault();
-        TimePeriod timePeriod = TimePeriod.fromEdgeDates(date, date, zoneId);
+        TimePeriod timePeriod = TimePeriod.fromEdgeDates(date, date);
         
         LogEntry logEntry = new LogEntry();
         logEntry.setDate(date);

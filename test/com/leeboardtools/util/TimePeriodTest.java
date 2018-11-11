@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Iterator;
@@ -49,6 +50,13 @@ public class TimePeriodTest {
         assertEquals(true, b.equals(c));
         assertEquals(true, c.equals(b));
         
+        a = TimePeriod.fromEdgeDates(LocalDate.of(2018, 11, 9), LocalDate.of(2018, 11, 9));
+        b = TimePeriod.fromEdgeDates(LocalDate.of(2018, 11, 9), LocalDate.of(2018, 11, 10));
+        c = TimePeriod.fromEdgeDates(LocalDate.of(2018, 11, 9), LocalDate.of(2018, 11, 10));
+        assertEquals(false, a.equals(b));
+        assertEquals(false, b.equals(a));
+        assertEquals(true, b.equals(c));
+        assertEquals(true, c.equals(b));
     }
 
     /**
@@ -60,6 +68,14 @@ public class TimePeriodTest {
         TimePeriod a = TimePeriod.fromEdgeTimes(LocalDateTime.of(2017, 10, 2, 10, 20), LocalDateTime.of(2017, 10, 2, 10, 21), null);
         Duration duration = a.getDuration();
         assertEquals(Duration.ofMinutes(1), duration);
+        
+        TimePeriod b = TimePeriod.fromEdgeDates(LocalDate.of(2018, 11, 9), LocalDate.of(2018, 11, 9));
+        duration = b.getDuration();
+        assertEquals(Duration.ofDays(1), duration);
+        
+        b = TimePeriod.fromEdgeDates(LocalDate.of(2018, 11, 11), LocalDate.of(2018, 11, 9));
+        duration = b.getDuration();
+        assertEquals(Duration.ofDays(3), duration);
     }
 
     /**
@@ -80,6 +96,23 @@ public class TimePeriodTest {
         assertEquals(-1, a.compareTo(d));
         assertEquals(1, d.compareTo(a));
         
+        TimePeriod x = TimePeriod.fromEdgeDates(LocalDate.of(2017, 10, 1), LocalDate.of(2017, 10, 1));
+        assertEquals(-1, x.compareTo(a));
+        assertEquals(1, a.compareTo(x));
+        
+        TimePeriod y = TimePeriod.fromEdgeDates(LocalDate.of(2017, 10, 2), LocalDate.of(2017, 10, 3));
+        assertEquals(1, y.compareTo(x));
+        assertEquals(-1, x.compareTo(y));
+        assertEquals(-1, y.compareTo(a));
+        assertEquals(1, a.compareTo(y));
+        
+        TimePeriod z = TimePeriod.fromEdgeDates(LocalDate.of(2017, 10, 2), LocalDate.of(2017, 10, 2));
+        assertEquals(-1, z.compareTo(y));
+        assertEquals(1, y.compareTo(z));
+        
+        z = TimePeriod.fromEdgeDates(LocalDate.of(2017, 10, 3), LocalDate.of(2017, 10, 2));
+        assertEquals(0, z.compareTo(y));
+        assertEquals(0, y.compareTo(z));
     }
 
     /**
@@ -102,11 +135,42 @@ public class TimePeriodTest {
         Instant instantE = dateTimeE.atZone(zoneId).toInstant();
         
         TimePeriod period = TimePeriod.fromEdgeTimes(instantB, instantD);
-        assertEquals(TimePeriod.Relation.BEFORE, period.getTimeRelation(instantA));
-        assertEquals(TimePeriod.Relation.ON_START_EDGE, period.getTimeRelation(instantB));
-        assertEquals(TimePeriod.Relation.INSIDE, period.getTimeRelation(instantC));
-        assertEquals(TimePeriod.Relation.ON_END_EDGE, period.getTimeRelation(instantD));
-        assertEquals(TimePeriod.Relation.AFTER, period.getTimeRelation(instantE));
+        assertEquals(TimePeriod.Relation.BEFORE, period.getTimeRelation(instantA, zoneId));
+        assertEquals(TimePeriod.Relation.ON_START_EDGE, period.getTimeRelation(instantB, zoneId));
+        assertEquals(TimePeriod.Relation.INSIDE, period.getTimeRelation(instantC, zoneId));
+        assertEquals(TimePeriod.Relation.ON_END_EDGE, period.getTimeRelation(instantD, zoneId));
+        assertEquals(TimePeriod.Relation.AFTER, period.getTimeRelation(instantE, zoneId));
+    }
+    
+    @Test
+    public void testGetTimeRelation_Instant_FullDays() {
+        System.out.println("getTimeRelation-Instant-FullDays");
+        
+        ZoneId zoneId = ZoneId.of("Europe/Paris");
+        Instant instantA = LocalDateTime.of(2018, 11, 9, 23, 59).atZone(zoneId).toInstant();
+        Instant instantB = LocalDateTime.of(2018, 11, 10, 0, 0).atZone(zoneId).toInstant();
+        Instant instantC = LocalDateTime.of(2018, 11, 10, 0, 1).atZone(zoneId).toInstant();
+        Instant instantD = LocalDateTime.of(2018, 11, 11, 0, 0).atZone(zoneId).toInstant();
+        Instant instantE = LocalDateTime.of(2018, 11, 11, 0, 1).atZone(zoneId).toInstant();
+        Instant instantF = LocalDateTime.of(2018, 11, 12, 0, 0).atZone(zoneId).toInstant();
+        Instant instantG = LocalDateTime.of(2018, 11, 12, 0, 1).atZone(zoneId).toInstant();
+        
+        LocalDate firstDate = LocalDate.of(2018, 11, 10);
+        LocalDate lastDate = LocalDate.of(2018, 11, 11);
+        
+        TimePeriod period = TimePeriod.fromEdgeDates(firstDate, firstDate);
+        assertEquals(TimePeriod.Relation.BEFORE, period.getTimeRelation(instantA, zoneId));
+        assertEquals(TimePeriod.Relation.ON_START_EDGE, period.getTimeRelation(instantB, zoneId));
+        assertEquals(TimePeriod.Relation.INSIDE, period.getTimeRelation(instantC, zoneId));
+        assertEquals(TimePeriod.Relation.ON_END_EDGE, period.getTimeRelation(instantD, zoneId));
+        assertEquals(TimePeriod.Relation.AFTER, period.getTimeRelation(instantE, zoneId));
+        
+        period = TimePeriod.fromEdgeDates(firstDate, lastDate);
+        assertEquals(TimePeriod.Relation.BEFORE, period.getTimeRelation(instantA, zoneId));
+        assertEquals(TimePeriod.Relation.ON_START_EDGE, period.getTimeRelation(instantB, zoneId));
+        assertEquals(TimePeriod.Relation.INSIDE, period.getTimeRelation(instantC, zoneId));
+        assertEquals(TimePeriod.Relation.ON_END_EDGE, period.getTimeRelation(instantF, zoneId));
+        assertEquals(TimePeriod.Relation.AFTER, period.getTimeRelation(instantG, zoneId));
     }
 
     /**
@@ -145,38 +209,38 @@ public class TimePeriodTest {
         TimePeriod periodA = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeB, zoneId);
         TimePeriod periodB = TimePeriod.fromEdgeTimes(dateTimeC, dateTimeD, zoneId);
         
-        assertEquals(TimePeriod.Overlap.NONE, periodA.getOverlap(periodB));
-        assertEquals(TimePeriod.Overlap.NONE, periodB.getOverlap(periodA));
+        assertEquals(TimePeriod.Overlap.NONE, periodA.getOverlap(periodB, null));
+        assertEquals(TimePeriod.Overlap.NONE, periodB.getOverlap(periodA, null));
         
         periodA = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeC, zoneId);
         periodB = TimePeriod.fromEdgeTimes(dateTimeC, dateTimeD, zoneId);
-        assertEquals(TimePeriod.Overlap.TOUCH_OTHER_START, periodA.getOverlap(periodB));
-        assertEquals(TimePeriod.Overlap.TOUCH_OTHER_END, periodB.getOverlap(periodA));
+        assertEquals(TimePeriod.Overlap.TOUCH_OTHER_START, periodA.getOverlap(periodB, null));
+        assertEquals(TimePeriod.Overlap.TOUCH_OTHER_END, periodB.getOverlap(periodA, null));
         
         periodA = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeC, zoneId);
         periodB = TimePeriod.fromEdgeTimes(dateTimeB, dateTimeD, zoneId);
-        assertEquals(TimePeriod.Overlap.OTHER_START, periodA.getOverlap(periodB));
-        assertEquals(TimePeriod.Overlap.OTHER_END, periodB.getOverlap(periodA));
+        assertEquals(TimePeriod.Overlap.OTHER_START, periodA.getOverlap(periodB, null));
+        assertEquals(TimePeriod.Overlap.OTHER_END, periodB.getOverlap(periodA, null));
         
         periodA = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeC, zoneId);
         periodB = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeC, zoneId);
-        assertEquals(TimePeriod.Overlap.SAME, periodA.getOverlap(periodB));
-        assertEquals(TimePeriod.Overlap.SAME, periodB.getOverlap(periodA));
+        assertEquals(TimePeriod.Overlap.SAME, periodA.getOverlap(periodB, null));
+        assertEquals(TimePeriod.Overlap.SAME, periodB.getOverlap(periodA, null));
         
         periodA = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeD, zoneId);
         periodB = TimePeriod.fromEdgeTimes(dateTimeB, dateTimeC, zoneId);
-        assertEquals(TimePeriod.Overlap.ENCLOSES_OTHER, periodA.getOverlap(periodB));
-        assertEquals(TimePeriod.Overlap.INSIDE_OTHER, periodB.getOverlap(periodA));
+        assertEquals(TimePeriod.Overlap.ENCLOSES_OTHER, periodA.getOverlap(periodB, null));
+        assertEquals(TimePeriod.Overlap.INSIDE_OTHER, periodB.getOverlap(periodA, null));
         
         periodA = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeC, zoneId);
         periodB = TimePeriod.fromEdgeTimes(dateTimeB, dateTimeC, zoneId);
-        assertEquals(TimePeriod.Overlap.ENCLOSES_OTHER, periodA.getOverlap(periodB));
-        assertEquals(TimePeriod.Overlap.INSIDE_OTHER, periodB.getOverlap(periodA));
+        assertEquals(TimePeriod.Overlap.ENCLOSES_OTHER, periodA.getOverlap(periodB, null));
+        assertEquals(TimePeriod.Overlap.INSIDE_OTHER, periodB.getOverlap(periodA, null));
         
         periodA = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeC, zoneId);
         periodB = TimePeriod.fromEdgeTimes(dateTimeA, dateTimeD, zoneId);
-        assertEquals(TimePeriod.Overlap.INSIDE_OTHER, periodA.getOverlap(periodB));
-        assertEquals(TimePeriod.Overlap.ENCLOSES_OTHER, periodB.getOverlap(periodA));
+        assertEquals(TimePeriod.Overlap.INSIDE_OTHER, periodA.getOverlap(periodB, null));
+        assertEquals(TimePeriod.Overlap.ENCLOSES_OTHER, periodB.getOverlap(periodA, null));
     }
 
     /**
@@ -206,6 +270,18 @@ public class TimePeriodTest {
         result = timePeriod.containsDate(date, zoneId);
         assertFalse(result);
         
+        
+        LocalDate firstDate = LocalDate.of(2018, 11, 9);
+        timePeriod = TimePeriod.fromEdgeDates(firstDate, firstDate);
+
+        date = LocalDate.of(2018, 11, 8);
+        assertFalse(timePeriod.containsDate(date, zoneId));
+
+        date = LocalDate.of(2018, 11, 9);
+        assertTrue(timePeriod.containsDate(date, zoneId));
+        
+        date = LocalDate.of(2018, 11, 10);
+        assertFalse(timePeriod.containsDate(date, zoneId));
     }
     
     void checkLocalDates(LocalDate [] refDates, Collection<LocalDate> testDates) {
@@ -238,6 +314,17 @@ public class TimePeriodTest {
         testDates = timePeriod.getDates(null, zoneId);
         checkLocalDates(
                 new LocalDate[] { LocalDate.of(2017, 3, 12), LocalDate.of(2017, 3, 13), LocalDate.of(2017, 3, 14) }, 
+                testDates);
+        
+        // Also testing adding to existing collection, collection is not cleared...
+        LocalDate firstDate = LocalDate.of(2018, 11, 9);
+        LocalDate lastDate = LocalDate.of(2018, 11, 10);
+        timePeriod = TimePeriod.fromEdgeDates(firstDate, lastDate);
+        timePeriod.getDates(testDates, zoneId);
+        checkLocalDates(
+                new LocalDate[] { LocalDate.of(2017, 3, 12), LocalDate.of(2017, 3, 13), LocalDate.of(2017, 3, 14),
+                    firstDate, lastDate
+                }, 
                 testDates);
     }
 
@@ -353,20 +440,19 @@ public class TimePeriodTest {
         LocalDate dateB = LocalDate.of(2017, 2, 11);
         ZoneId zoneId = ZoneId.of("Europe/Paris");
 
-        TimePeriod result = TimePeriod.fromEdgeDates(dateA, dateB, zoneId);
-        Instant instantA = dateA.atStartOfDay(zoneId).toInstant();
-        Instant instantB = dateB.atStartOfDay(zoneId).plusDays(1).toInstant();
-        assertTrue(instantA.equals(result.getStartInstant()));
-        assertTrue(instantB.equals(result.getEndInstant()));
+        TimePeriod result = TimePeriod.fromEdgeDates(dateA, dateB);
+        assertTrue(dateA.equals(result.getFirstFullDay()));
+        assertTrue(dateB.equals(result.getLastFullDay()));
+        assertEquals(2, result.getFullDayCount());
 
-        result = TimePeriod.fromEdgeDates(dateB, dateA, zoneId);
-        assertTrue(instantA.equals(result.getStartInstant()));
-        assertTrue(instantB.equals(result.getEndInstant()));
+        result = TimePeriod.fromEdgeDates(dateB, dateA);
+        assertTrue(dateA.equals(result.getFirstFullDay()));
+        assertTrue(dateB.equals(result.getLastFullDay()));
         
-        result = TimePeriod.fromEdgeDates(dateA, dateA, zoneId);
-        instantB = dateA.atStartOfDay(zoneId).plusDays(1).toInstant();
-        assertTrue(instantA.equals(result.getStartInstant()));
-        assertTrue(instantB.equals(result.getEndInstant()));
+        result = TimePeriod.fromEdgeDates(dateA, dateA);
+        assertTrue(dateA.equals(result.getFirstFullDay()));
+        assertTrue(dateA.equals(result.getLastFullDay()));
+        assertEquals(1, result.getFullDayCount());
     }
 
     /**
@@ -407,7 +493,41 @@ public class TimePeriodTest {
         result = TimePeriod.joinPeriods(periodA, periodB);
         assertTrue(instantA.equals(result.getStartInstant()));
         assertTrue(instantD.equals(result.getEndInstant()));
-    }
+        
+        
+        LocalDate dateA = LocalDate.of(2018, 11, 8);
+        LocalDate dateB = LocalDate.of(2018, 11, 9);
+        LocalDate dateC = LocalDate.of(2018, 11, 10);
+        LocalDate dateD = LocalDate.of(2018, 11, 11);
+        LocalDate dateE = LocalDate.of(2018, 11, 12);
+        
+        periodA = TimePeriod.fromEdgeDates(dateB, dateD);
+        periodB = TimePeriod.fromEdgeDates(dateA, dateA);
+        result = TimePeriod.joinPeriods(periodA, periodB);
+        assertEquals(dateA, result.getFirstFullDay());
+        assertEquals(dateD, result.getLastFullDay());
+        
+        periodB = TimePeriod.fromEdgeDates(dateA, dateB);
+        result = TimePeriod.joinPeriods(periodA, periodB);
+        assertEquals(dateA, result.getFirstFullDay());
+        assertEquals(dateD, result.getLastFullDay());
+        
+        periodB = TimePeriod.fromEdgeDates(dateA, dateC);
+        result = TimePeriod.joinPeriods(periodA, periodB);
+        assertEquals(dateA, result.getFirstFullDay());
+        assertEquals(dateD, result.getLastFullDay());
+        
+        periodB = TimePeriod.fromEdgeDates(dateA, dateE);
+        result = TimePeriod.joinPeriods(periodA, periodB);
+        assertEquals(dateA, result.getFirstFullDay());
+        assertEquals(dateE, result.getLastFullDay());
+        
+        periodA = TimePeriod.fromEdgeDates(dateA, dateA);
+        periodB = TimePeriod.fromEdgeDates(dateE, dateE);
+        result = TimePeriod.joinPeriods(periodA, periodB);
+        assertEquals(dateA, result.getFirstFullDay());
+        assertEquals(dateE, result.getLastFullDay());
+}
 
     
     /**
@@ -481,6 +601,12 @@ public class TimePeriodTest {
         TimePeriod timePeriodB = TimePeriod.fromEdgeTimes(
                 LocalDateTime.of(2017, 10, 23, 4, 5), LocalDateTime.of(2017, 8, 14, 14, 24), zoneId);
         timePeriodB.toJSON(dstJSONObject, "timePeriodB");
+        
+        TimePeriod timePeriodC = TimePeriod.fromEdgeDates(LocalDate.of(2018, 11, 9), LocalDate.of(2018, 11, 9));
+        timePeriodC.toJSON(dstJSONObject, "timePeriodC");
+        
+        TimePeriod timePeriodD = TimePeriod.fromEdgeDates(LocalDate.of(2018, 11, 9), LocalDate.of(2018, 11, 10));
+        timePeriodD.toJSON(dstJSONObject, "timePeriodD");
 
         String jsonText = dstJSONObject.toString();
         JSONObject jsonObject = new JSONObject(jsonText);
@@ -490,5 +616,11 @@ public class TimePeriodTest {
         
         testTimePeriod = TimePeriod.fromJSON(jsonObject, "timePeriodB");
         assertEquals(timePeriodB, testTimePeriod);
+        
+        testTimePeriod = TimePeriod.fromJSON(jsonObject, "timePeriodC");
+        assertEquals(timePeriodC, testTimePeriod);
+        
+        testTimePeriod = TimePeriod.fromJSON(jsonObject, "timePeriodD");
+        assertEquals(timePeriodD, testTimePeriod);
     }
 }

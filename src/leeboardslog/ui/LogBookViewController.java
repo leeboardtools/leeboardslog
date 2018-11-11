@@ -240,7 +240,7 @@ public class LogBookViewController implements Initializable {
         LogBook logBook = this.logBookEditor.getLogBook();
         if (logBook != null) {
             // TODO: Close the primary log entry view...
-            TimePeriod timePeriod = TimePeriod.fromEdgeDates(activeDate.get(), activeDate.get(), logBook.getCurrentZoneId());
+            TimePeriod timePeriod = TimePeriod.fromEdgeDates(activeDate.get(), activeDate.get());
             LogEntryView view = this.logBookEditor.getViewForNewLogEntry(timePeriod);
             view.showView();
         }
@@ -321,6 +321,11 @@ public class LogBookViewController implements Initializable {
             if (object != null) {
                 object.getLogEntries().forEach((logEntry)-> {
                     String text = logEntry.getHeadingText(false);
+                    TimePeriod timePeriod = logEntry.getTimePeriod();
+                    if (!timePeriod.isFullDays()) {
+                        String timeText = timePeriod.getLocalStartDateTime().toLocalTime().toString();
+                        text = timeText + " " + text;
+                    }
                     strings.add(text);
                 });
             }
